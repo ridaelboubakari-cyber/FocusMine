@@ -11,9 +11,10 @@ import com.google.android.material.textview.MaterialTextView
  * UIController 3.0 — النسخة النهائية
  *
  * الجديد:
- *  - ربط مع ExplodedOverlayView
- *  - setState أكثر دقة مع transitions سلسة
- *  - updateAccel يحرك Data Panel بالوقت الحقيقي
+ * - ربط مع ExplodedOverlayView
+ * - setState أكثر دقة مع transitions سلسة
+ * - updateAccel يحرك Data Panel بالوقت الحقيقي
+ * - إضافة دالة updateArmingCountdown للعد التنازلي قبل التفعيل
  */
 class UIController(private val activity: MainActivity) {
 
@@ -238,5 +239,15 @@ class UIController(private val activity: MainActivity) {
             interpolator = OvershootInterpolator(2f)
             start()
         }
+    }
+
+    /**
+     * updateArmingCountdown — يحدث النص خلال العد التنازلي
+     * @param secondsLeft الثواني المتبقية (5, 4, 3, 2, 1)
+     */
+    fun updateArmingCountdown(secondsLeft: Int) {
+        setStatus("ARMING IN $secondsLeft...", RED)
+        timerText.text = "00:00:0$secondsLeft"
+        timerText.setTextColor(DIMMER)
     }
 }
