@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android" 
+    xmlns:app="http://schemas.android.com/apk/res-auto" 
+    android:layout_width="match_parent" 
+    android:layout_height="match_parent" 
+    android:background="#080808" 
+    android:paddingStart="28dp" 
+    android:paddingEnd="28dp">
+
+    <com.google.android.material.textview.MaterialTextView 
+        android:id="@+id/p3Title" 
+        android:layout_width="wrap_content" 
+        android:layout_height="wrap_content" 
+        android:layout_marginTop="24dp" 
+        android:text="CHOOSE YOUR\nFIRST MISSION" 
+        android:textColor="#E8E8E8" 
+        android:textSize="36sp" 
+        android:fontFamily="@font/rajdhani_bold" 
+        android:lineSpacingMultiplier="0.92" 
+        app:layout_constraintTop_toTopOf="parent" 
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <com.google.android.material.textview.MaterialTextView 
+        android:layout_width="wrap_content" 
+        android:layout_height="wrap_content" 
+        android:layout_marginTop="10dp" 
+        android:text="How long can you survive?" 
+        android:textColor="#333333" 
+        android:textSize="14sp" 
+        android:fontFamily="@font/rajdhani_medium" 
+        app:layout_constraintTop_toBottomOf="@id/p3Title" 
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <LinearLayout 
+        android:id="@+id/durationGroup" 
+        android:layout_width="0dp" 
+        android:layout_height="wrap_content" 
+        android:orientation="vertical" 
+        android:layout_marginTop="40dp" 
+        app:layout_constraintTop_toTopOf="parent" 
+        app:layout_constraintBottom_toBottomOf="parent" 
+        app:layout_constraintStart_toStartOf="parent" 
+        app:layout_constraintEnd_toEndOf="parent" 
+        app:layout_constraintVertical_bias="0.45">
+
+        <com.google.android.material.button.MaterialButton 
+            android:id="@+id/btn30min" 
+            style="@style/Widget.Material3.Button.OutlinedButton" 
+            android:layout_width="match_parent" 
+            android:layout_height="58dp" 
+            android:layout_marginBottom="12dp" 
+            android:text="30 MIN // ROOKIE" 
+            android:textColor="#CC3300" 
+            android:textSize="14sp" 
+            android:fontFamily="@font/rajdhani_bold" 
+            android:letterSpacing="0.1" 
+            app:strokeWidth="1dp" 
+            app:cornerRadius="0dp" 
+            app:rippleColor="#1ACC3300"/>
+
+        <com.google.android.material.button.MaterialButton 
+            android:id="@+id/btn1h" 
+            style="@style/Widget.Material3.Button.OutlinedButton" 
+            android:layout_width="match_parent" 
+            android:layout_height="58dp" 
+            android:layout_marginBottom="12dp" 
+            android:text="1 HOUR // SOLDIER" 
+            android:textColor="#CC3300" 
+            android:textSize="14sp" 
+            android:fontFamily="@font/rajdhani_bold" 
+            android:letterSpacing="0.1" 
+            app:strokeWidth="1dp" 
+            app:cornerRadius="0dp" 
+            app:rippleColor="#1ACC3300"/>
+
+        <com.google.android.material.button.MaterialButton 
+            android:id="@+id/btn2h" 
+            style="@style/Widget.Material3.Button.OutlinedButton" 
+            android:layout_width="match_parent" 
+            android:layout_height="58dp" 
+            android:layout_marginBottom="12dp" 
+            android:text="2 HOURS // OPERATOR" 
+            android:textColor="#CC3300" 
+            android:textSize="14sp" 
+            android:fontFamily="@font/rajdhani_bold" 
+            android:letterSpacing="0.1" 
+            app:strokeWidth="1dp" 
+            app:cornerRadius="0dp" 
+            app:rippleColor="#1ACC3300"/>
+
+        <com.google.android.material.button.MaterialButton 
+            android:id="@+id/btn3h" 
+            style="@style/Widget.Material3.Button.OutlinedButton" 
+            android:layout_width="match_parent" 
+            android:layout_height="58dp" 
+            android:text="3 HOURS // GHOST" 
+            android:textColor="#CC3300" 
+            android:textSize="14sp" 
+            android:fontFamily="@font/rajdhani_bold" 
+            android:letterSpacing="0.1" 
+            app:strokeWidth="1dp" 
+            app:cornerRadius="0dp" 
+            app:rippleColor="#1ACC3300"/>
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
