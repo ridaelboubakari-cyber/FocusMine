@@ -14,6 +14,9 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
+    - name: Generate Engine
+      run: gradle wrapper
+
     - name: Build APK
       run: |
         chmod +x ./gradlew
@@ -24,4 +27,3 @@ jobs:
       with:
         name: FocusMine-App
         path: app/build/outputs/apk/debug/app-debug.apk
-
