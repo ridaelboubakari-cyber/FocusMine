@@ -7,6 +7,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.RingtoneManager
@@ -60,14 +61,14 @@ class FocusService : Service(), SensorEventListener {
     // ─── المستشعرات ───────────────────────────────────────────────
     private lateinit var sensorManager: SensorManager
     private var accelerometer: Sensor? = null
-    private var frameCount = 0L
+    private var lastSensorUpdateMs = 0L
 
     // ─── الصوت ────────────────────────────────────────────────────
     private lateinit var audioManager: AudioManager
     private var mediaPlayer: MediaPlayer? = null
-    private var originalAlarmVolume  = 0
-    private var originalRingVolume   = 0
-    private var originalMusicVolume  = 0
+    private var originalAlarmVolume = 0
+    private var originalRingVolume  = 0
+    private var originalMusicVolume = 0
 
     // ─── الاهتزاز ─────────────────────────────────────────────────
     private lateinit var vibrator: Vibrator
@@ -79,18 +80,16 @@ class FocusService : Service(), SensorEventListener {
     private var lastZ  = 0f
 
     // ─── المؤقتات ─────────────────────────────────────────────────
-    private val handler        = Handler(Looper.getMainLooper())
+    private val handler       = Handler(Looper.getMainLooper())
     private var graceRunnable: Runnable? = null
 
     // ─── ثوابت ────────────────────────────────────────────────────
-    private val GRAVITY             = SensorManager.GRAVITY_EARTH.toDouble()
-    private val MOVEMENT_THRESHOLD  = 0.5
-    private val FACE_DOWN_THRESHOLD = -7.0
+    private val GRAVITY                  = SensorManager.GRAVITY_EARTH.toDouble()
+    private val MOVEMENT_THRESHOLD       = 1.5   // مصحح — أقل حساسية
+    private val FACE_DOWN_THRESHOLD      = -7.0
+    private val ACCEL_UPDATE_INTERVAL_MS = 1000L // ثانية حقيقية
 
     // ══════════════════════════════════════════════════════════════
-    // دورة حياة الخدمة
-    // ══════════════════════════════════════════════════════════════
-
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "Service created")
@@ -102,25 +101,18 @@ class FocusService : Service(), SensorEventListener {
 
         createNotificationChannel()
 
-        // ✅ startForeground حسب نسخة أندرويد
         when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
-                startForeground(
-                    NOTIF_ID,
-                    buildNotification("🚨 اللغم نشيط — لا تلمس التيلفون!"),
-                    android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-                )
-            }
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> {
-                startForeground(
-                    NOTIF_ID,
-                    buildNotification("🚨 اللغم نشيط — لا تلمس التيلفون!"),
-                    android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_NONE
-                )
-            }
-            else -> {
-                startForeground(NOTIF_ID, buildNotification("🚨 اللغم نشيط — لا تلمس التيلفون!"))
-            }
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> startForeground(
+                NOTIF_ID,
+                buildNotification("🚨 اللغم نشيط — لا تلمس التيلفون!"),
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> startForeground(
+                NOTIF_ID,
+                buildNotification("🚨 اللغم نشيط — لا تلمس التيلفون!"),
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_NONE
+            )
+            else -> startForeground(NOTIF_ID, buildNotification("🚨 اللغم نشيط — لا تلمس التيلفون!"))
         }
 
         accelerometer?.let {
@@ -135,10 +127,7 @@ class FocusService : Service(), SensorEventListener {
                 Log.d(TAG, "Mine ARMED")
                 sendBroadcast(Intent(ACTION_ARMED))
             }
-            ACTION_DISARM    -> {
-                Log.d(TAG, "Service disarmed — stopping")
-                stopSelf()
-            }
+            ACTION_DISARM    -> { Log.d(TAG, "Disarmed"); stopSelf() }
             ACTION_SURRENDER -> onSurrenderFromNotification()
         }
         return START_STICKY
@@ -146,10 +135,10 @@ class FocusService : Service(), SensorEventListener {
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.d(TAG, "Service destroyed")
         sensorManager.unregisterListener(this)
         graceRunnable?.let { handler.removeCallbacks(it) }
         safeStopAlarm()
+        Log.d(TAG, "Service destroyed")
     }
 
     override fun onBind(intent: Intent?) = null
@@ -168,9 +157,10 @@ class FocusService : Service(), SensorEventListener {
         val z = event.values[2].toDouble()
         val acceleration = sqrt(x * x + y * y + z * z) - GRAVITY
 
-        // إرسال تحديث للشاشة كل ثانية تقريباً
-        frameCount++
-        if (frameCount % 60 == 0L) {
+        // تحديث الشاشة كل ثانية حقيقية
+        val now = System.currentTimeMillis()
+        if (now - lastSensorUpdateMs >= ACCEL_UPDATE_INTERVAL_MS) {
+            lastSensorUpdateMs = now
             sendBroadcast(Intent(ACTION_ACCEL_UPDATE).apply {
                 putExtra(EXTRA_ACCEL, acceleration)
             })
@@ -198,10 +188,10 @@ class FocusService : Service(), SensorEventListener {
         graceRunnable = Runnable {
             isGracePeriod = false
             if (isArmed && !alarmTriggered && lastZ > FACE_DOWN_THRESHOLD) {
-                Log.d(TAG, "Grace failed — triggering alarm")
+                Log.d(TAG, "Grace FAILED — triggering alarm")
                 triggerAlarm()
             } else if (isArmed) {
-                Log.d(TAG, "Grace cancelled — phone returned")
+                Log.d(TAG, "Grace cancelled — safe")
                 updateNotification("🚨 اللغم نشيط — لا تلمس التيلفون!")
                 sendBroadcast(Intent(ACTION_GRACE_CANCELLED))
             }
@@ -210,7 +200,7 @@ class FocusService : Service(), SensorEventListener {
     }
 
     // ══════════════════════════════════════════════════════════════
-    // الإنذار — مضمون 100% يصدر صوت
+    // الإنذار
     // ══════════════════════════════════════════════════════════════
 
     fun triggerAlarm() {
@@ -218,168 +208,132 @@ class FocusService : Service(), SensorEventListener {
         isArmed        = false
         Log.d(TAG, "ALARM TRIGGERED")
 
-        // ✅ الخطوة 1: رفع كل قنوات الصوت للحد الأقصى
         forceMaxVolume()
 
-        // ✅ الخطوة 2: تشغيل الصوت بـ 3 محاولات متتالية
-        val soundPlayed = tryPlayAlarmStream()
-                       || tryPlayRingtoneStream()
-                       || tryPlayMusicStream()
+        // يحاول R.raw أولاً، إيلا مالقاهش يروح للـ system URI
+        val played = playAlarm() || playFallbackAlarm()
+        if (!played) Log.e(TAG, "ALL sound attempts FAILED")
 
-        if (!soundPlayed) {
-            Log.e(TAG, "ALL sound attempts failed — vibration only")
-        }
-
-        // ✅ الخطوة 3: اهتزاز عنيف ومتواصل
         triggerAlarmVibration()
-
         updateNotification("💥 فشلت! اضغط هنا باش يسكت الإنذار", showSurrender = true)
         sendBroadcast(Intent(ACTION_ALARM_TRIGGERED))
     }
 
-    // ─── رفع كل قنوات الصوت ──────────────────────────────────────
+    // ─── رفع الصوت للحد الأقصى ────────────────────────────────────
     private fun forceMaxVolume() {
         try {
-            // نحفظ القيم الأصلية
             originalAlarmVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
             originalRingVolume  = audioManager.getStreamVolume(AudioManager.STREAM_RING)
             originalMusicVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
 
-            // نرفع الكل للحد الأقصى
-            audioManager.setStreamVolume(
-                AudioManager.STREAM_ALARM,
-                audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM), 0
-            )
-            audioManager.setStreamVolume(
-                AudioManager.STREAM_RING,
-                audioManager.getStreamMaxVolume(AudioManager.STREAM_RING), 0
-            )
-            audioManager.setStreamVolume(
-                AudioManager.STREAM_MUSIC,
-                audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0
-            )
-
-            // ✅ إلغاء وضع الصمت في Samsung — AudioManager.RINGER_MODE_NORMAL
-            audioManager.ringerMode = AudioManager.RINGER_MODE_NORMAL
+            audioManager.setStreamVolume(AudioManager.STREAM_ALARM,
+                audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM), 0)
+            audioManager.setStreamVolume(AudioManager.STREAM_RING,
+                audioManager.getStreamMaxVolume(AudioManager.STREAM_RING), 0)
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,
+                audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0)
 
             Log.d(TAG, "Volume forced to max on all streams")
         } catch (e: Exception) {
-            Log.e(TAG, "forceMaxVolume failed: ${e.message}")
+            Log.e(TAG, "forceMaxVolume: ${e.message}")
         }
     }
 
-    // ─── محاولة 1: AudioAttributes ALARM — الطريقة الصحيحة Android 8+ ──
-    private fun tryPlayAlarmStream(): Boolean {
+    /**
+     * playAlarm — يحاول R.raw.alarm_sound
+     * يتحقق بلي الملف موجود فعلاً قبل ما يحاول
+     */
+    private fun playAlarm(): Boolean {
         return try {
-            val uri = getAlarmUri()
-            Log.d(TAG, "Trying ALARM AudioAttributes with URI: $uri")
+            val rawId = resources.getIdentifier("alarm_sound", "raw", packageName)
+            if (rawId == 0) {
+                Log.d(TAG, "R.raw.alarm_sound not found — skip to fallback")
+                return false
+            }
 
+            Log.d(TAG, "Playing R.raw.alarm_sound (id=$rawId)")
             mediaPlayer = MediaPlayer().apply {
-                // ✅ AudioAttributes بدل setAudioStreamType — Samsung كيفهمو صح
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     setAudioAttributes(
-                        android.media.AudioAttributes.Builder()
-                            .setUsage(android.media.AudioAttributes.USAGE_ALARM)
-                            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_ALARM)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                             .build()
                     )
                 } else {
                     @Suppress("DEPRECATION")
                     setAudioStreamType(AudioManager.STREAM_ALARM)
                 }
-                setDataSource(applicationContext, uri)
+                val afd = resources.openRawResourceFd(rawId)
+                setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                afd.close()
                 isLooping = true
                 prepare()
                 start()
             }
-            Log.d(TAG, "✅ ALARM AudioAttributes SUCCESS")
+            Log.d(TAG, "✅ R.raw.alarm_sound SUCCESS")
             true
         } catch (e: Exception) {
-            Log.w(TAG, "ALARM AudioAttributes failed: ${e.message}")
+            Log.w(TAG, "playAlarm failed: ${e.message}")
             safeReleasePlayer()
             false
         }
     }
 
-    // ─── محاولة 2: AudioAttributes RING ─────────────────────────
-    private fun tryPlayRingtoneStream(): Boolean {
-        return try {
-            val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-                ?: return false
-            Log.d(TAG, "Trying RING AudioAttributes with URI: $uri")
+    /**
+     * playFallbackAlarm — صوت التيلفون الافتراضي
+     * 3 محاولات: ALARM → RING → MUSIC
+     */
+    private fun playFallbackAlarm(): Boolean {
+        val alarmUri = getSystemAlarmUri() ?: run {
+            Log.e(TAG, "No system URI found at all")
+            return false
+        }
+        val ringUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE) ?: alarmUri
 
+        return tryPlayUri(alarmUri, AudioAttributes.USAGE_ALARM,                AudioManager.STREAM_ALARM, "ALARM")
+            || tryPlayUri(ringUri,  AudioAttributes.USAGE_NOTIFICATION_RINGTONE, AudioManager.STREAM_RING,  "RING")
+            || tryPlayUri(alarmUri, AudioAttributes.USAGE_MEDIA,                 AudioManager.STREAM_MUSIC, "MUSIC")
+    }
+
+    private fun tryPlayUri(uri: Uri, usage: Int, streamType: Int, label: String): Boolean {
+        return try {
+            Log.d(TAG, "Trying $label stream — $uri")
             mediaPlayer = MediaPlayer().apply {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     setAudioAttributes(
-                        android.media.AudioAttributes.Builder()
-                            .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
-                            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        AudioAttributes.Builder()
+                            .setUsage(usage)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                             .build()
                     )
                 } else {
                     @Suppress("DEPRECATION")
-                    setAudioStreamType(AudioManager.STREAM_RING)
+                    setAudioStreamType(streamType)
                 }
                 setDataSource(applicationContext, uri)
                 isLooping = true
                 prepare()
                 start()
             }
-            Log.d(TAG, "✅ RING AudioAttributes SUCCESS")
+            Log.d(TAG, "✅ $label stream SUCCESS")
             true
         } catch (e: Exception) {
-            Log.w(TAG, "RING AudioAttributes failed: ${e.message}")
+            Log.w(TAG, "$label stream FAILED: ${e.message}")
             safeReleasePlayer()
             false
         }
     }
 
-    // ─── محاولة 3: AudioAttributes MEDIA — آخر حل ───────────────
-    private fun tryPlayMusicStream(): Boolean {
-        return try {
-            val uri = getAlarmUri()
-            Log.d(TAG, "Trying MEDIA AudioAttributes with URI: $uri")
-
-            mediaPlayer = MediaPlayer().apply {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    setAudioAttributes(
-                        android.media.AudioAttributes.Builder()
-                            .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
-                            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
-                            .build()
-                    )
-                } else {
-                    @Suppress("DEPRECATION")
-                    setAudioStreamType(AudioManager.STREAM_MUSIC)
-                }
-                setDataSource(applicationContext, uri)
-                isLooping = true
-                prepare()
-                start()
-            }
-            Log.d(TAG, "✅ MEDIA AudioAttributes SUCCESS")
-            true
-        } catch (e: Exception) {
-            Log.e(TAG, "MEDIA AudioAttributes failed: ${e.message}")
-            safeReleasePlayer()
-            false
-        }
-    }
-
-    // ─── جلب أفضل URI للصوت ──────────────────────────────────────
-    private fun getAlarmUri(): Uri {
-        // 1. صوت الـ Alarm المخصص للتطبيق
-        // 2. الـ Alarm الافتراضي للتيلفون
-        // 3. الرنين الافتراضي كـ fallback نهائي
-        return RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+    private fun getSystemAlarmUri(): Uri? =
+        RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
             ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
             ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-    }
 
-    // ─── اهتزاز عنيف ──────────────────────────────────────────────
+    // ─── اهتزاز ───────────────────────────────────────────────────
     private fun triggerAlarmVibration() {
         try {
-            val pattern = longArrayOf(0, 500, 200, 500, 200, 500, 200, 800)
+            val pattern = longArrayOf(0, 600, 200, 600, 200, 600, 200, 1000)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0))
             } else {
@@ -402,22 +356,13 @@ class FocusService : Service(), SensorEventListener {
     }
 
     private fun safeStopAlarm() {
-        // إيقاف الصوت
         safeReleasePlayer()
-
-        // إرجاع الصوت لحالتو الأصلية
         try {
             audioManager.setStreamVolume(AudioManager.STREAM_ALARM, originalAlarmVolume, 0)
             audioManager.setStreamVolume(AudioManager.STREAM_RING,  originalRingVolume,  0)
             audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalMusicVolume, 0)
-        } catch (e: Exception) {
-            Log.e(TAG, "restoreVolume failed: ${e.message}")
-        }
-
-        // إيقاف الاهتزاز
-        try {
-            vibrator.cancel()
-        } catch (e: Exception) { }
+        } catch (e: Exception) { Log.e(TAG, "restoreVolume: ${e.message}") }
+        try { vibrator.cancel() } catch (e: Exception) { }
     }
 
     private fun safeReleasePlayer() {
@@ -426,9 +371,7 @@ class FocusService : Service(), SensorEventListener {
             mediaPlayer?.release()
         } catch (e: Exception) {
             Log.w(TAG, "safeReleasePlayer: ${e.message}")
-        } finally {
-            mediaPlayer = null
-        }
+        } finally { mediaPlayer = null }
     }
 
     private fun onSurrenderFromNotification() {
@@ -443,13 +386,9 @@ class FocusService : Service(), SensorEventListener {
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                CHANNEL_ID,
-                "FocusMine",
-                NotificationManager.IMPORTANCE_LOW
+                CHANNEL_ID, "FocusMine", NotificationManager.IMPORTANCE_LOW
             ).apply { description = "جلسة التركيز النشطة" }
-
-            getSystemService(NotificationManager::class.java)
-                .createNotificationChannel(channel)
+            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }
 
@@ -459,7 +398,6 @@ class FocusService : Service(), SensorEventListener {
             Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE
         )
-
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("FocusMine 🔴")
             .setContentText(text)
@@ -475,11 +413,9 @@ class FocusService : Service(), SensorEventListener {
             )
             builder.addAction(
                 android.R.drawable.ic_menu_close_clear_cancel,
-                "أنا أستسلم",
-                surrenderIntent
+                "أنا أستسلم", surrenderIntent
             )
         }
-
         return builder.build()
     }
 
