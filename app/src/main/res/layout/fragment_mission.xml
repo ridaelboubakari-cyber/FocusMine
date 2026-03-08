@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/missionRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#080808"
+    android:keepScreenOn="true">
+
+    <!-- TOP BAR -->
+    <LinearLayout
+        android:id="@+id/topBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginTop="52dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="FOCUSMINE" android:textColor="#CC3300"
+            android:textSize="11sp" android:fontFamily="@font/rajdhani_bold"
+            android:letterSpacing="0.4"/>
+
+        <View android:id="@+id/appDot"
+            android:layout_width="5dp" android:layout_height="5dp"
+            android:layout_marginEnd="10dp"
+            android:background="@drawable/bg_status_dot"/>
+
+        <com.google.android.material.textview.MaterialTextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="ACTIVE" android:textColor="#1E1E1E"
+            android:textSize="10sp" android:fontFamily="@font/rajdhani_medium"
+            android:letterSpacing="0.2"/>
+    </LinearLayout>
+
+    <!-- TOP DIVIDER -->
+    <View android:id="@+id/topDivider"
+        android:layout_width="0dp" android:layout_height="1dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginStart="24dp" android:layout_marginEnd="24dp"
+        android:background="@drawable/bg_divider_gradient"
+        app:layout_constraintTop_toBottomOf="@id/topBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- RADAR VIEW -->
+    <com.reda.focusmine.RadarView
+        android:id="@+id/radarView"
+        android:layout_width="296dp"
+        android:layout_height="296dp"
+        app:layout_constraintTop_toBottomOf="@id/topDivider"
+        app:layout_constraintBottom_toTopOf="@id/statusContainer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:layout_constraintVertical_bias="0.42"/>
+
+    <!-- TIMER inside radar -->
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/timerText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="02:00:00"
+        android:textColor="#1A1A1A"
+        android:textSize="52sp"
+        android:fontFamily="@font/rajdhani_bold"
+        android:letterSpacing="-0.02"
+        android:includeFontPadding="false"
+        app:layout_constraintTop_toTopOf="@id/radarView"
+        app:layout_constraintBottom_toBottomOf="@id/radarView"
+        app:layout_constraintStart_toStartOf="@id/radarView"
+        app:layout_constraintEnd_toEndOf="@id/radarView"
+        app:layout_constraintVertical_bias="0.43"/>
+
+    <!-- HH MM SS label -->
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/timerUnits"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="HH · MM · SS"
+        android:textColor="#141414"
+        android:textSize="9sp"
+        android:letterSpacing="0.5"
+        android:fontFamily="@font/rajdhani_medium"
+        app:layout_constraintTop_toBottomOf="@id/timerText"
+        app:layout_constraintStart_toStartOf="@id/radarView"
+        app:layout_constraintEnd_toEndOf="@id/radarView"/>
+
+    <!-- LEFT PANEL -->
+    <LinearLayout android:id="@+id/leftPanel"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:orientation="vertical" android:layout_marginStart="6dp"
+        app:layout_constraintTop_toTopOf="@id/radarView"
+        app:layout_constraintBottom_toBottomOf="@id/radarView"
+        app:layout_constraintStart_toStartOf="@id/radarView"
+        app:layout_constraintVertical_bias="0.65">
+        <com.google.android.material.textview.MaterialTextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="ACC" android:textColor="#141414"
+            android:textSize="8sp" android:fontFamily="@font/rajdhani_medium" android:letterSpacing="0.3"/>
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/accelValue"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="0.00" android:textColor="#1E1E1E"
+            android:textSize="14sp" android:fontFamily="@font/rajdhani_bold"/>
+        <View android:layout_width="16dp" android:layout_height="1dp"
+            android:layout_marginTop="5dp" android:layout_marginBottom="5dp"
+            android:background="#111111"/>
+        <com.google.android.material.textview.MaterialTextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="SNS" android:textColor="#141414"
+            android:textSize="8sp" android:fontFamily="@font/rajdhani_medium" android:letterSpacing="0.3"/>
+        <com.google.android.material.textview.MaterialTextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="LIVE" android:textColor="#1E1E1E"
+            android:textSize="14sp" android:fontFamily="@font/rajdhani_bold"/>
+    </LinearLayout>
+
+    <!-- STATUS -->
+    <LinearLayout android:id="@+id/statusContainer"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:layout_marginTop="14dp"
+        app:layout_constraintTop_toBottomOf="@id/radarView"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+        <View android:id="@+id/statusDot"
+            android:layout_width="5dp" android:layout_height="5dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_status_dot"/>
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/statusText"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="SYSTEM INITIALIZING"
+            android:textColor="#CC3300" android:textSize="11sp"
+            android:fontFamily="@font/rajdhani_bold" android:letterSpacing="0.25"/>
+    </LinearLayout>
+
+    <!-- BOTTOM BAR -->
+    <LinearLayout android:id="@+id/bottomBar"
+        android:layout_width="0dp" android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginStart="24dp" android:layout_marginEnd="24dp"
+        android:layout_marginBottom="44dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/missionLabel"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginBottom="10dp"
+            android:text="MISSION IN PROGRESS"
+            android:textColor="#141414" android:textSize="9sp"
+            android:fontFamily="@font/rajdhani_medium" android:letterSpacing="0.3"/>
+
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:layout_marginBottom="14dp"
+            android:background="@drawable/bg_divider_gradient"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/surrenderButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:text="ABORT MISSION"
+            android:textColor="#CC3300"
+            android:textSize="13sp"
+            android:fontFamily="@font/rajdhani_bold"
+            android:letterSpacing="0.25"
+            android:visibility="gone"
+            app:strokeColor="#CC3300"
+            app:strokeWidth="1dp"
+            app:cornerRadius="0dp"
+            app:rippleColor="#1ACC3300"
+            app:icon="@drawable/ic_warning"
+            app:iconTint="#CC3300"
+            app:iconGravity="textStart"/>
+    </LinearLayout>
+
+    <!-- EXPLODED OVERLAY — فوق كل شي -->
+    <com.reda.focusmine.ExplodedOverlayView
+        android:id="@+id/explodedOverlay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
