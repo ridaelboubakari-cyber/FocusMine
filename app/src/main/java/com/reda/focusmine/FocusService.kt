@@ -18,7 +18,7 @@ class FocusService : Service(), SensorEventListener {
     // ─── المستشعرات ───────────────────────────────────────────────
     private lateinit var sensorManager: SensorManager
     private var accelerometer: Sensor? = null
-    private var frameCount = 0L // ✅ إضافة: لحساب الإطارات وإرسال التحديثات للشاشة
+    private var frameCount = 0L
 
     // ─── الصوت ────────────────────────────────────────────────────
     private lateinit var audioManager: AudioManager
@@ -46,9 +46,6 @@ class FocusService : Service(), SensorEventListener {
     private val NOTIF_ID            = 1
 
     // ══════════════════════════════════════════════════════════════
-    // دورة حياة الخدمة
-    // ══════════════════════════════════════════════════════════════
-
     override fun onCreate() {
         super.onCreate()
 
@@ -84,9 +81,9 @@ class FocusService : Service(), SensorEventListener {
         when (intent?.action) {
             ACTION_ARM -> {
                 isArmed = true
-                sendBroadcast(Intent(ACTION_ARMED)) // ✅ إضافة: إرسال إشارة بتفعيل اللغم
+                sendBroadcast(Intent(ACTION_ARMED))
             }
-            ACTION_DISARM   -> stopSelf()
+            ACTION_DISARM    -> stopSelf()
             ACTION_SURRENDER -> onSurrenderFromNotification()
         }
         return START_STICKY
@@ -102,7 +99,7 @@ class FocusService : Service(), SensorEventListener {
     override fun onBind(intent: Intent?) = null
 
     // ══════════════════════════════════════════════════════════════
-    // المستشعر — قلب التطبيق
+    // المستشعر
     // ══════════════════════════════════════════════════════════════
 
     override fun onSensorChanged(event: SensorEvent?) {
@@ -115,7 +112,7 @@ class FocusService : Service(), SensorEventListener {
         val z = event.values[2].toDouble()
         val acceleration = sqrt(x * x + y * y + z * z) - GRAVITY
 
-        // ✅ إضافة: إرسال تحديثات التسارع للشاشة كل ثانية تقريباً (لتشغيل الرادار)
+        // إرسال تحديثات التسارع للشاشة كل ثانية تقريباً
         frameCount++
         if (frameCount % 60 == 0L) {
             sendBroadcast(Intent(ACTION_ACCEL_UPDATE).apply {
@@ -139,7 +136,7 @@ class FocusService : Service(), SensorEventListener {
     private fun startGracePeriod() {
         isGracePeriod = true
         updateNotification("⚠️ تيك... توك... رجع التيلفون!")
-        sendBroadcast(Intent(ACTION_GRACE_START)) // ✅ إضافة: إرسال إشارة بدء فترة السماح
+        sendBroadcast(Intent(ACTION_GRACE_START))
 
         graceRunnable = Runnable {
             isGracePeriod = false
@@ -147,7 +144,7 @@ class FocusService : Service(), SensorEventListener {
                 triggerAlarm()
             } else if (isArmed) {
                 updateNotification("🚨 اللغم نشيط — لا تلمس التيلفون!")
-                sendBroadcast(Intent(ACTION_GRACE_CANCELLED)) // ✅ إضافة: إرسال إشارة إلغاء فترة السماح
+                sendBroadcast(Intent(ACTION_GRACE_CANCELLED))
             }
         }
         handler.postDelayed(graceRunnable!!, 3_000)
@@ -186,19 +183,21 @@ class FocusService : Service(), SensorEventListener {
         sendBroadcast(Intent(ACTION_ALARM_TRIGGERED))
     }
 
+    // ✅ النسخة المحدثة — مع fallback للرنين العادي + logging
     private fun playFallbackAlarm() {
         try {
-            val uri = android.media.RingtoneManager.getDefaultUri(
-                android.media.RingtoneManager.TYPE_ALARM
-            )
+            val alarmUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_ALARM)
+                ?: android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_RINGTONE)
+
             mediaPlayer = MediaPlayer().apply {
+                setDataSource(this@FocusService, alarmUri)
                 setAudioStreamType(AudioManager.STREAM_ALARM)
-                setDataSource(this@FocusService, uri)
                 isLooping = true
                 prepare()
                 start()
             }
         } catch (e: Exception) {
+            android.util.Log.e("FocusMine", "Failed to play any sound: ${e.message}")
         }
     }
 
@@ -292,8 +291,6 @@ class FocusService : Service(), SensorEventListener {
         const val ACTION_SURRENDER       = "com.reda.focusmine.SURRENDER"
         const val ACTION_ALARM_TRIGGERED = "com.reda.focusmine.ALARM_TRIGGERED"
         const val ACTION_SURRENDERED     = "com.reda.focusmine.SURRENDERED"
-        
-        // ✅ إضافة: الثوابت الجديدة للتواصل مع الشاشة
         const val ACTION_ARMED           = "com.reda.focusmine.ARMED"
         const val ACTION_ACCEL_UPDATE    = "com.reda.focusmine.ACCEL_UPDATE"
         const val ACTION_GRACE_START     = "com.reda.focusmine.GRACE_START"
