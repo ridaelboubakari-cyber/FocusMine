@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#080808">
+
+    <!-- ── TOP BAR ─────────────────────────────────────────── -->
+    <LinearLayout
+        android:id="@+id/topBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginTop="52dp"
+        android:gravity="center_vertical"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="FOCUSMINE"
+            android:textColor="#CC3300"
+            android:textSize="11sp"
+            android:fontFamily="@font/rajdhani_bold"
+            android:letterSpacing="0.4"/>
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/tvMissionCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="MISSIONS: 0"
+            android:textColor="#222222"
+            android:textSize="10sp"
+            android:fontFamily="@font/rajdhani_medium"
+            android:letterSpacing="0.2"/>
+    </LinearLayout>
+
+    <!-- ── GREETING ───────────────────────────────────────── -->
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvGreeting"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginTop="32dp"
+        android:text="SOLDIER, YOUR FIRST MISSION AWAITS."
+        android:textColor="#CC3300"
+        android:textSize="26sp"
+        android:fontFamily="@font/rajdhani_bold"
+        android:lineSpacingMultiplier="1.1"
+        app:layout_constraintTop_toBottomOf="@id/topBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ── STATS ROW ───────────────────────────────────────── -->
+    <LinearLayout
+        android:id="@+id/statsRow"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginTop="36dp"
+        app:layout_constraintTop_toBottomOf="@id/tvGreeting"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Streak -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:background="#0D0D0D">
+            <com.google.android.material.textview.MaterialTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="STREAK"
+                android:textColor="#252525"
+                android:textSize="9sp"
+                android:fontFamily="@font/rajdhani_medium"
+                android:letterSpacing="0.3"/>
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/tvStreak"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="0"
+                android:textColor="#CC3300"
+                android:textSize="40sp"
+                android:fontFamily="@font/rajdhani_bold"/>
+            <com.google.android.material.textview.MaterialTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="SESSIONS"
+                android:textColor="#1A1A1A"
+                android:textSize="9sp"
+                android:fontFamily="@font/rajdhani_medium"
+                android:letterSpacing="0.2"/>
+        </LinearLayout>
+
+        <View android:layout_width="1dp" android:layout_height="match_parent"
+            android:background="#111111"/>
+
+        <!-- Total Hours -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:background="#0D0D0D">
+            <com.google.android.material.textview.MaterialTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="FOCUS TIME"
+                android:textColor="#252525"
+                android:textSize="9sp"
+                android:fontFamily="@font/rajdhani_medium"
+                android:letterSpacing="0.3"/>
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/tvTotalHours"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="0.0"
+                android:textColor="#E8E8E8"
+                android:textSize="40sp"
+                android:fontFamily="@font/rajdhani_bold"/>
+            <com.google.android.material.textview.MaterialTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="HOURS SECURED"
+                android:textColor="#1A1A1A"
+                android:textSize="9sp"
+                android:fontFamily="@font/rajdhani_medium"
+                android:letterSpacing="0.2"/>
+        </LinearLayout>
+
+        <View android:layout_width="1dp" android:layout_height="match_parent"
+            android:background="#111111"/>
+
+        <!-- Failures -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:background="#0D0D0D">
+            <com.google.android.material.textview.MaterialTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="KIA COUNT"
+                android:textColor="#252525"
+                android:textSize="9sp"
+                android:fontFamily="@font/rajdhani_medium"
+                android:letterSpacing="0.3"/>
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/tvFailCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="0"
+                android:textColor="#441100"
+                android:textSize="40sp"
+                android:fontFamily="@font/rajdhani_bold"/>
+            <com.google.android.material.textview.MaterialTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="FAILURES"
+                android:textColor="#1A1A1A"
+                android:textSize="9sp"
+                android:fontFamily="@font/rajdhani_medium"
+                android:letterSpacing="0.2"/>
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View
+        android:id="@+id/dividerMid"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginTop="32dp"
+        android:background="#0F0F0F"
+        app:layout_constraintTop_toBottomOf="@id/statsRow"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ── START MISSION BUTTON ────────────────────────────── -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnStartMission"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="0dp"
+        android:layout_height="72dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="48dp"
+        android:text="▶  START MISSION"
+        android:textColor="#CC3300"
+        android:textSize="18sp"
+        android:fontFamily="@font/rajdhani_bold"
+        android:letterSpacing="0.2"
+        app:strokeColor="#CC3300"
+        app:strokeWidth="1dp"
+        app:cornerRadius="0dp"
+        app:rippleColor="#1ACC3300"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
