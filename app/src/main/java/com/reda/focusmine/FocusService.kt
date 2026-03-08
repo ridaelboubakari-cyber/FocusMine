@@ -8,19 +8,11 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.media.AudioManager
-import android.media.Ringtone
-import android.media.RingtoneManager
+import android.media.MediaPlayer
 import android.os.*
 import androidx.core.app.NotificationCompat
 import kotlin.math.sqrt
 
-/**
- * FocusService — الخدمة اللي كتخلي اللغم يخدم حتى ملي الشاشة تطفى
- *
- * Foreground Service = التطبيق كيبقى حي فالخلفية
- * بدونها: أندرويد (Doze Mode) كيقتل المستشعر بعد دقيقة
- * بيها: المستشعر خدام طول الجلسة — ساعتين كاملين
- */
 class FocusService : Service(), SensorEventListener {
 
     // ─── المستشعرات ───────────────────────────────────────────────
@@ -29,8 +21,8 @@ class FocusService : Service(), SensorEventListener {
 
     // ─── الصوت ────────────────────────────────────────────────────
     private lateinit var audioManager: AudioManager
-    private var alarmRingtone: Ringtone? = null
-    private var originalVolume = 0
+    private var mediaPlayer: MediaPlayer? = null
+    private var originalAlarmVolume = 0
 
     // ─── الاهتزاز ─────────────────────────────────────────────────
     private lateinit var vibrator: Vibrator
@@ -65,9 +57,24 @@ class FocusService : Service(), SensorEventListener {
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
         createNotificationChannel()
-        startForeground(NOTIF_ID, buildNotification("🚨 اللغم نشيط — لا تلمس التيلفون!"))
 
-        // تسجيل المستشعر — هنا فالService مانقلقوش على Doze Mode
+        // ✅ إصلاح Android 14: تحديد نوع الخدمة مطلوب من API 34
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(
+                NOTIF_ID,
+                buildNotification("🚨 اللغم نشيط — لا تلمس التيلفون!"),
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(
+                NOTIF_ID,
+                buildNotification("🚨 اللغم نشيط — لا تلمس التيلفون!"),
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_NONE
+            )
+        } else {
+            startForeground(NOTIF_ID, buildNotification("🚨 اللغم نشيط — لا تلمس التيلفون!"))
+        }
+
         accelerometer?.let {
             sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
         }
@@ -79,22 +86,21 @@ class FocusService : Service(), SensorEventListener {
             ACTION_DISARM   -> stopSelf()
             ACTION_SURRENDER -> onSurrenderFromNotification()
         }
-        // START_STICKY = إيلا قتل أندرويد الخدمة، تعاود تبدا وحدها
         return START_STICKY
     }
 
     override fun onDestroy() {
         super.onDestroy()
         sensorManager.unregisterListener(this)
-        alarmRingtone?.stop()
-        vibrator.cancel()
         graceRunnable?.let { handler.removeCallbacks(it) }
+        // ✅ نوقفو الصوت بأمان بدون كراش
+        safeStopAlarm()
     }
 
-    override fun onBind(intent: Intent?) = null  // ماشي Bound Service
+    override fun onBind(intent: Intent?) = null
 
     // ══════════════════════════════════════════════════════════════
-    // المستشعر
+    // المستشعر — قلب التطبيق
     // ══════════════════════════════════════════════════════════════
 
     override fun onSensorChanged(event: SensorEvent?) {
@@ -107,7 +113,6 @@ class FocusService : Service(), SensorEventListener {
         val x = event.values[0].toDouble()
         val y = event.values[1].toDouble()
         val z = event.values[2].toDouble()
-
         val acceleration = sqrt(x * x + y * y + z * z) - GRAVITY
 
         if (acceleration > MOVEMENT_THRESHOLD && !isGracePeriod) {
@@ -123,8 +128,6 @@ class FocusService : Service(), SensorEventListener {
 
     private fun startGracePeriod() {
         isGracePeriod = true
-
-        // إشعار تحذيري
         updateNotification("⚠️ تيك... توك... رجع التيلفون!")
 
         graceRunnable = Runnable {
@@ -142,18 +145,25 @@ class FocusService : Service(), SensorEventListener {
         alarmTriggered = true
         isArmed        = false
 
-        // رفع الصوت للحد الأقصى
-        originalVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
-        audioManager.setStreamVolume(
-            AudioManager.STREAM_ALARM,
-            audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM),
-            0
-        )
+        // ✅ إصلاح: رفع الصوت للحد الأقصى قبل تشغيل الإنذار
+        originalAlarmVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
+        val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM)
+        audioManager.setStreamVolume(AudioManager.STREAM_ALARM, maxVolume, 0)
 
-        // تشغيل الإنذار
-        val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-        alarmRingtone = RingtoneManager.getRingtone(this, uri)
-        alarmRingtone?.play()
+        // ✅ إصلاح: تشغيل الصوت مع معالجة آمنة للحالات الاستثنائية
+        try {
+            mediaPlayer = MediaPlayer.create(this, R.raw.alarm_sound)
+            if (mediaPlayer != null) {
+                mediaPlayer!!.isLooping = true
+                mediaPlayer!!.setAudioStreamType(AudioManager.STREAM_ALARM)
+                mediaPlayer!!.start()
+            } else {
+                // ✅ Fallback: إيلا مالقاش ملف MP3، يخدم الرنين الافتراضي
+                playFallbackAlarm()
+            }
+        } catch (e: Exception) {
+            playFallbackAlarm()
+        }
 
         // اهتزاز عنيف ومتواصل
         val pattern = longArrayOf(0, 500, 200, 500, 200, 500)
@@ -164,18 +174,51 @@ class FocusService : Service(), SensorEventListener {
             vibrator.vibrate(pattern, 0)
         }
 
-        // إشعار مع زر الاستسلام
         updateNotification("💥 فشلت! اضغط هنا باش يسكت الإنذار", showSurrender = true)
-
-        // إعلام MainActivity باش تظهر زر الاستسلام
         sendBroadcast(Intent(ACTION_ALARM_TRIGGERED))
     }
 
-    fun stopAlarm() {
-        alarmRingtone?.stop()
-        alarmRingtone = null
-        audioManager.setStreamVolume(AudioManager.STREAM_ALARM, originalVolume, 0)
+    // ✅ إصلاح: Fallback صوت إيلا مالقاش R.raw.alarm_sound
+    private fun playFallbackAlarm() {
+        try {
+            val uri = android.media.RingtoneManager.getDefaultUri(
+                android.media.RingtoneManager.TYPE_ALARM
+            )
+            mediaPlayer = MediaPlayer().apply {
+                setAudioStreamType(AudioManager.STREAM_ALARM)
+                setDataSource(this@FocusService, uri)
+                isLooping = true
+                prepare()
+                start()
+            }
+        } catch (e: Exception) {
+            // آخر حل: الاهتزاز وحده كافي
+        }
+    }
+
+    // ✅ إصلاح: إيقاف آمن بدون IllegalStateException
+    private fun safeStopAlarm() {
+        try {
+            if (mediaPlayer?.isPlaying == true) {
+                mediaPlayer?.stop()
+            }
+            mediaPlayer?.release()
+        } catch (e: Exception) {
+            // تجاهل — الحالة مش مهمة هنا
+        } finally {
+            mediaPlayer = null
+        }
+
+        // إرجاع الصوت لحالتو الأصلية
+        try {
+            audioManager.setStreamVolume(AudioManager.STREAM_ALARM, originalAlarmVolume, 0)
+        } catch (e: Exception) { }
+
         vibrator.cancel()
+    }
+
+    fun stopAlarm() {
+        safeStopAlarm()
         updateNotification("📝 تم تسجيل الفشل")
     }
 
@@ -185,7 +228,7 @@ class FocusService : Service(), SensorEventListener {
     }
 
     // ══════════════════════════════════════════════════════════════
-    // الإشعارات (Notification)
+    // الإشعارات
     // ══════════════════════════════════════════════════════════════
 
     private fun createNotificationChannel() {
@@ -193,8 +236,8 @@ class FocusService : Service(), SensorEventListener {
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 "FocusMine",
-                NotificationManager.IMPORTANCE_LOW  // LOW = بلا صوت، ما يزعجش
-            ).apply { description = "جلسة التركيز" }
+                NotificationManager.IMPORTANCE_LOW
+            ).apply { description = "جلسة التركيز النشطة" }
 
             getSystemService(NotificationManager::class.java)
                 .createNotificationChannel(channel)
@@ -202,7 +245,6 @@ class FocusService : Service(), SensorEventListener {
     }
 
     private fun buildNotification(text: String, showSurrender: Boolean = false): Notification {
-        // Intent باش تفتح التطبيق ملي تكليك على الإشعار
         val openApp = PendingIntent.getActivity(
             this, 0,
             Intent(this, MainActivity::class.java),
@@ -214,28 +256,31 @@ class FocusService : Service(), SensorEventListener {
             .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setContentIntent(openApp)
-            .setOngoing(true)  // الإشعار ما يتمسحش بالسحب
+            .setOngoing(true)
 
-        // زر الاستسلام فالإشعار — يظهر فقط ملي يطلع الإنذار
         if (showSurrender) {
             val surrenderIntent = PendingIntent.getService(
                 this, 0,
                 Intent(this, FocusService::class.java).apply { action = ACTION_SURRENDER },
                 PendingIntent.FLAG_IMMUTABLE
             )
-            builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "أنا أستسلم", surrenderIntent)
+            builder.addAction(
+                android.R.drawable.ic_menu_close_clear_cancel,
+                "أنا أستسلم",
+                surrenderIntent
+            )
         }
 
         return builder.build()
     }
 
     private fun updateNotification(text: String, showSurrender: Boolean = false) {
-        val manager = getSystemService(NotificationManager::class.java)
-        manager.notify(NOTIF_ID, buildNotification(text, showSurrender))
+        getSystemService(NotificationManager::class.java)
+            .notify(NOTIF_ID, buildNotification(text, showSurrender))
     }
 
     // ══════════════════════════════════════════════════════════════
-    // Actions (باش MainActivity تتواصل مع الخدمة)
+    // Companion Object
     // ══════════════════════════════════════════════════════════════
 
     companion object {
@@ -245,7 +290,6 @@ class FocusService : Service(), SensorEventListener {
         const val ACTION_ALARM_TRIGGERED = "com.reda.focusmine.ALARM_TRIGGERED"
         const val ACTION_SURRENDERED     = "com.reda.focusmine.SURRENDERED"
 
-        // باش تبدا الخدمة من MainActivity
         fun start(context: Context) {
             val intent = Intent(context, FocusService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -268,4 +312,3 @@ class FocusService : Service(), SensorEventListener {
         }
     }
 }
-
