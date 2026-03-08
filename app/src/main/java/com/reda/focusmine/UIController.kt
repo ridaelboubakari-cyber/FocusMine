@@ -11,10 +11,9 @@ import com.google.android.material.textview.MaterialTextView
  * UIController 3.0 — النسخة النهائية
  *
  * الجديد:
- * - ربط مع ExplodedOverlayView
- * - setState أكثر دقة مع transitions سلسة
- * - updateAccel يحرك Data Panel بالوقت الحقيقي
- * - إضافة دالة updateArmingCountdown للعد التنازلي قبل التفعيل
+ *  - ربط مع ExplodedOverlayView
+ *  - setState أكثر دقة مع transitions سلسة
+ *  - updateAccel يحرك Data Panel بالوقت الحقيقي
  */
 class UIController(private val activity: MainActivity) {
 
@@ -77,18 +76,26 @@ class UIController(private val activity: MainActivity) {
     }
 
     // ─── نبضة القلب ───────────────────────────────────────────────
+    // ✅ إصلاح: repeatCount على كل ObjectAnimator بشكل مستقل
+    // AnimatorSet ما عندهاش repeatCount property
     private fun startHeartbeat(speed: Float = 1f) {
         heartbeat?.cancel()
         val duration = (950f / speed).toLong()
         val scale    = if (speed > 1.5f) 1.05f else 1.022f
-        heartbeat = AnimatorSet().apply {
-            playTogether(
-                ObjectAnimator.ofFloat(timerText, "scaleX", 1f, scale, 1f),
-                ObjectAnimator.ofFloat(timerText, "scaleY", 1f, scale, 1f)
-            )
+
+        val sX = ObjectAnimator.ofFloat(timerText, "scaleX", 1f, scale, 1f).apply {
             this.duration    = duration
             repeatCount      = ObjectAnimator.INFINITE
             interpolator     = OvershootInterpolator(1.1f)
+        }
+        val sY = ObjectAnimator.ofFloat(timerText, "scaleY", 1f, scale, 1f).apply {
+            this.duration    = duration
+            repeatCount      = ObjectAnimator.INFINITE
+            interpolator     = OvershootInterpolator(1.1f)
+        }
+
+        heartbeat = AnimatorSet().apply {
+            playTogether(sX, sY)
             start()
         }
     }
@@ -230,23 +237,30 @@ class UIController(private val activity: MainActivity) {
     }
 
     private fun startSuccessAnim() {
-        AnimatorSet().apply {
-            playTogether(
-                ObjectAnimator.ofFloat(timerText, "scaleX", 1f, 1.1f, 1f),
-                ObjectAnimator.ofFloat(timerText, "scaleY", 1f, 1.1f, 1f)
-            )
+        val sX = ObjectAnimator.ofFloat(timerText, "scaleX", 1f, 1.1f, 1f).apply {
             duration     = 700
             interpolator = OvershootInterpolator(2f)
+        }
+        val sY = ObjectAnimator.ofFloat(timerText, "scaleY", 1f, 1.1f, 1f).apply {
+            duration     = 700
+            interpolator = OvershootInterpolator(2f)
+        }
+        AnimatorSet().apply {
+            playTogether(sX, sY)
             start()
         }
     }
 
+    // ══════════════════════════════════════════════════════════════
+    // updateArmingCountdown — عداد التسليح (5, 4, 3, 2, 1)
+    // ══════════════════════════════════════════════════════════════
+
     /**
-     * updateArmingCountdown — يحدث النص خلال العد التنازلي
-     * @param secondsLeft الثواني المتبقية (5, 4, 3, 2, 1)
+     * يتستدعى من MainActivity كل ثانية خلال الـ 5 ثواني
+     * @param secondsLeft الثواني المتبقية قبل تفعيل اللغم
      */
     fun updateArmingCountdown(secondsLeft: Int) {
-        setStatus("ARMING IN $secondsLeft...", RED)
+        setStatus("ARMING IN  $secondsLeft...", RED)
         timerText.text = "00:00:0$secondsLeft"
         timerText.setTextColor(DIMMER)
     }
