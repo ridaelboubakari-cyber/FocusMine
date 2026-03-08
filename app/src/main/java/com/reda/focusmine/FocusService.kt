@@ -39,7 +39,7 @@ class FocusService : Service(), SensorEventListener {
 
     // ─── ثوابت ────────────────────────────────────────────────────
     private val GRAVITY             = SensorManager.GRAVITY_EARTH.toDouble()
-    private val MOVEMENT_THRESHOLD  = 2.5
+    private val MOVEMENT_THRESHOLD  = 0.5
     private val FACE_DOWN_THRESHOLD = -7.0
     private val CHANNEL_ID          = "focus_mine_channel"
     private val NOTIF_ID            = 1
