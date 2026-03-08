@@ -18,6 +18,7 @@ class FocusService : Service(), SensorEventListener {
     // ─── المستشعرات ───────────────────────────────────────────────
     private lateinit var sensorManager: SensorManager
     private var accelerometer: Sensor? = null
+    private var frameCount = 0L // ✅ إضافة: لحساب الإطارات وإرسال التحديثات للشاشة
 
     // ─── الصوت ────────────────────────────────────────────────────
     private lateinit var audioManager: AudioManager
@@ -58,7 +59,6 @@ class FocusService : Service(), SensorEventListener {
 
         createNotificationChannel()
 
-        // ✅ إصلاح Android 14: تحديد نوع الخدمة مطلوب من API 34
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(
                 NOTIF_ID,
@@ -82,7 +82,10 @@ class FocusService : Service(), SensorEventListener {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_ARM      -> isArmed = true
+            ACTION_ARM -> {
+                isArmed = true
+                sendBroadcast(Intent(ACTION_ARMED)) // ✅ إضافة: إرسال إشارة بتفعيل اللغم
+            }
             ACTION_DISARM   -> stopSelf()
             ACTION_SURRENDER -> onSurrenderFromNotification()
         }
@@ -93,7 +96,6 @@ class FocusService : Service(), SensorEventListener {
         super.onDestroy()
         sensorManager.unregisterListener(this)
         graceRunnable?.let { handler.removeCallbacks(it) }
-        // ✅ نوقفو الصوت بأمان بدون كراش
         safeStopAlarm()
     }
 
@@ -108,12 +110,20 @@ class FocusService : Service(), SensorEventListener {
 
         lastZ = event.values[2]
 
-        if (!isArmed || alarmTriggered) return
-
         val x = event.values[0].toDouble()
         val y = event.values[1].toDouble()
         val z = event.values[2].toDouble()
         val acceleration = sqrt(x * x + y * y + z * z) - GRAVITY
+
+        // ✅ إضافة: إرسال تحديثات التسارع للشاشة كل ثانية تقريباً (لتشغيل الرادار)
+        frameCount++
+        if (frameCount % 60 == 0L) {
+            sendBroadcast(Intent(ACTION_ACCEL_UPDATE).apply {
+                putExtra(EXTRA_ACCEL, acceleration)
+            })
+        }
+
+        if (!isArmed || alarmTriggered) return
 
         if (acceleration > MOVEMENT_THRESHOLD && !isGracePeriod) {
             startGracePeriod()
@@ -129,6 +139,7 @@ class FocusService : Service(), SensorEventListener {
     private fun startGracePeriod() {
         isGracePeriod = true
         updateNotification("⚠️ تيك... توك... رجع التيلفون!")
+        sendBroadcast(Intent(ACTION_GRACE_START)) // ✅ إضافة: إرسال إشارة بدء فترة السماح
 
         graceRunnable = Runnable {
             isGracePeriod = false
@@ -136,6 +147,7 @@ class FocusService : Service(), SensorEventListener {
                 triggerAlarm()
             } else if (isArmed) {
                 updateNotification("🚨 اللغم نشيط — لا تلمس التيلفون!")
+                sendBroadcast(Intent(ACTION_GRACE_CANCELLED)) // ✅ إضافة: إرسال إشارة إلغاء فترة السماح
             }
         }
         handler.postDelayed(graceRunnable!!, 3_000)
@@ -145,12 +157,10 @@ class FocusService : Service(), SensorEventListener {
         alarmTriggered = true
         isArmed        = false
 
-        // ✅ إصلاح: رفع الصوت للحد الأقصى قبل تشغيل الإنذار
         originalAlarmVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
         val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM)
         audioManager.setStreamVolume(AudioManager.STREAM_ALARM, maxVolume, 0)
 
-        // ✅ إصلاح: تشغيل الصوت مع معالجة آمنة للحالات الاستثنائية
         try {
             mediaPlayer = MediaPlayer.create(this, R.raw.alarm_sound)
             if (mediaPlayer != null) {
@@ -158,14 +168,12 @@ class FocusService : Service(), SensorEventListener {
                 mediaPlayer!!.setAudioStreamType(AudioManager.STREAM_ALARM)
                 mediaPlayer!!.start()
             } else {
-                // ✅ Fallback: إيلا مالقاش ملف MP3، يخدم الرنين الافتراضي
                 playFallbackAlarm()
             }
         } catch (e: Exception) {
             playFallbackAlarm()
         }
 
-        // اهتزاز عنيف ومتواصل
         val pattern = longArrayOf(0, 500, 200, 500, 200, 500)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0))
@@ -178,7 +186,6 @@ class FocusService : Service(), SensorEventListener {
         sendBroadcast(Intent(ACTION_ALARM_TRIGGERED))
     }
 
-    // ✅ إصلاح: Fallback صوت إيلا مالقاش R.raw.alarm_sound
     private fun playFallbackAlarm() {
         try {
             val uri = android.media.RingtoneManager.getDefaultUri(
@@ -192,11 +199,9 @@ class FocusService : Service(), SensorEventListener {
                 start()
             }
         } catch (e: Exception) {
-            // آخر حل: الاهتزاز وحده كافي
         }
     }
 
-    // ✅ إصلاح: إيقاف آمن بدون IllegalStateException
     private fun safeStopAlarm() {
         try {
             if (mediaPlayer?.isPlaying == true) {
@@ -204,12 +209,10 @@ class FocusService : Service(), SensorEventListener {
             }
             mediaPlayer?.release()
         } catch (e: Exception) {
-            // تجاهل — الحالة مش مهمة هنا
         } finally {
             mediaPlayer = null
         }
 
-        // إرجاع الصوت لحالتو الأصلية
         try {
             audioManager.setStreamVolume(AudioManager.STREAM_ALARM, originalAlarmVolume, 0)
         } catch (e: Exception) { }
@@ -289,6 +292,13 @@ class FocusService : Service(), SensorEventListener {
         const val ACTION_SURRENDER       = "com.reda.focusmine.SURRENDER"
         const val ACTION_ALARM_TRIGGERED = "com.reda.focusmine.ALARM_TRIGGERED"
         const val ACTION_SURRENDERED     = "com.reda.focusmine.SURRENDERED"
+        
+        // ✅ إضافة: الثوابت الجديدة للتواصل مع الشاشة
+        const val ACTION_ARMED           = "com.reda.focusmine.ARMED"
+        const val ACTION_ACCEL_UPDATE    = "com.reda.focusmine.ACCEL_UPDATE"
+        const val ACTION_GRACE_START     = "com.reda.focusmine.GRACE_START"
+        const val ACTION_GRACE_CANCELLED = "com.reda.focusmine.GRACE_CANCELLED"
+        const val EXTRA_ACCEL            = "extra_accel"
 
         fun start(context: Context) {
             val intent = Intent(context, FocusService::class.java)
