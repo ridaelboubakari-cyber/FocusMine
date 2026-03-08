@@ -9,7 +9,9 @@
     <application
         android:allowBackup="true"
         android:label="FocusMine"
-        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar"> <activity
+        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
+
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
@@ -18,9 +20,14 @@
             </intent-filter>
         </activity>
 
-        <service
-            android:name=".FocusService"
-            android:exported="false"
-            android:foregroundServiceType="specialUse" />
+        <service 
+            android:name=".FocusService" 
+            android:foregroundServiceType="specialUse"
+            android:exported="false">
+            <property 
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" 
+                android:value="focusSession" />
+        </service>
+
     </application>
 </manifest>
