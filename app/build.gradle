@@ -1,7 +1,8 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
-    id 'kotlin-kapt' 
+    id 'kotlin-kapt'
+    id 'androidx.navigation.safeargs.kotlin'
 }
 
 android {
@@ -10,10 +11,14 @@ android {
 
     defaultConfig {
         applicationId "com.reda.focusmine"
-        minSdk 24
+        minSdk 26  // Claude طلعها لـ 26 باش يخدمو الأنيماشيونات الجداد مزيان
         targetSdk 34
         versionCode 1
         versionName "1.0"
+    }
+
+    buildFeatures {
+        viewBinding true
     }
 
     compileOptions {
@@ -31,13 +36,23 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.11.0'
 
-    // Room — قاعدة البيانات
+    // ─── Navigation Component ───
+    def nav_version = "2.7.7"
+    implementation "androidx.navigation:navigation-fragment-ktx:$nav_version"
+    implementation "androidx.navigation:navigation-ui-ktx:$nav_version"
+
+    // ─── Room Database ───
     def room_version = "2.6.1"
     implementation "androidx.room:room-runtime:$room_version"
     implementation "androidx.room:room-ktx:$room_version"
     kapt "androidx.room:room-compiler:$room_version"
 
-    // Coroutines — باش يخدم lifecycleScope.launch
+    // ─── Lifecycle + ViewModel + Coroutines ───
+    def lifecycle_version = "2.7.0"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3"
-    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.7.0"
+
+    // ─── ViewPager2 (Onboarding) ───
+    implementation "androidx.viewpager2:viewpager2:1.0.0"
 }
