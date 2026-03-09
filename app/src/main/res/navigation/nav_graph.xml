@@ -6,9 +6,6 @@
     android:id="@+id/nav_graph"
     app:startDestination="@id/splashFragment">
 
-    <!-- ═══════════════════════════════════════════════
-         SPLASH — يقرر: Onboarding أو Home
-    ════════════════════════════════════════════════ -->
     <fragment
         android:id="@+id/splashFragment"
         android:name="com.reda.focusmine.ui.SplashFragment"
@@ -32,9 +29,6 @@
             app:popUpToInclusive="true" />
     </fragment>
 
-    <!-- ═══════════════════════════════════════════════
-         ONBOARDING — 3 شاشات (ViewPager2 داخل Fragment)
-    ════════════════════════════════════════════════ -->
     <fragment
         android:id="@+id/onboardingFragment"
         android:name="com.reda.focusmine.ui.OnboardingFragment"
@@ -50,9 +44,6 @@
             app:popUpToInclusive="true" />
     </fragment>
 
-    <!-- ═══════════════════════════════════════════════
-         HOME — Dashboard الرئيسي
-    ════════════════════════════════════════════════ -->
     <fragment
         android:id="@+id/homeFragment"
         android:name="com.reda.focusmine.ui.HomeFragment"
@@ -66,9 +57,6 @@
             app:exitAnim="@anim/fade_out" />
     </fragment>
 
-    <!-- ═══════════════════════════════════════════════
-         MISSION — الرادار + الجلسة النشطة
-    ════════════════════════════════════════════════ -->
     <fragment
         android:id="@+id/missionFragment"
         android:name="com.reda.focusmine.ui.MissionFragment"
@@ -79,6 +67,16 @@
             android:name="durationMs"
             app:argType="long"
             android:defaultValue="7200000L" />
+            
+        <argument 
+            android:name="microGoal"
+            app:argType="string"
+            android:defaultValue="" />
+
+        <argument 
+            android:name="emotionalSnapshot"
+            app:argType="string"
+            android:defaultValue="" />
 
         <action
             android:id="@+id/action_mission_to_report"
@@ -89,9 +87,6 @@
             app:popUpToInclusive="true" />
     </fragment>
 
-    <!-- ═══════════════════════════════════════════════
-         REPORT — After Action Report (Success/Fail)
-    ════════════════════════════════════════════════ -->
     <fragment
         android:id="@+id/reportFragment"
         android:name="com.reda.focusmine.ui.ReportFragment"
@@ -105,6 +100,26 @@
         <argument
             android:name="durationMs"
             app:argType="long" />
+            
+        <argument android:name="exitExcuse"
+            app:argType="string"
+            android:defaultValue="" />
+
+        <argument android:name="wasCompromised"
+            app:argType="boolean"
+            android:defaultValue="false" />
+
+        <argument android:name="appLeftCount"
+            app:argType="integer"
+            android:defaultValue="0" />
+
+        <argument android:name="emotionalSnapshot"
+            app:argType="string"
+            android:defaultValue="" />
+
+        <argument android:name="microGoal"
+            app:argType="string"
+            android:defaultValue="" />
 
         <action
             android:id="@+id/action_report_to_home"
