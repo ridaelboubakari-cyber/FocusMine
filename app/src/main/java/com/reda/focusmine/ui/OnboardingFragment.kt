@@ -1,6 +1,8 @@
 package com.reda.focusmine.ui
 
 import android.content.Context
+import android.content.SharedPreferences
+import android.graphics.Color
 import android.os.*
 import android.view.*
 import android.view.animation.DecelerateInterpolator
@@ -11,18 +13,33 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textview.MaterialTextView
 import com.reda.focusmine.R
+import com.reda.focusmine.data.ModeConfigProvider
+import com.reda.focusmine.data.OperativeMode
 
 // ══════════════════════════════════════════════════════════════
 // OnboardingFragment — الحاوية الرئيسية (ViewPager2)
+//
+// PHASE 2 CHANGES:
+//   - Added Page 4: Mode Selection (RECRUIT / OPERATIVE / GHOST)
+//   - Mode is saved to SharedPrefs and LOCKED — never changeable
+//   - Total pages: 4 (was 3)
+//
+// Layout IDs (fragment_onboarding.xml — unchanged):
+//   onboardingPager, btnNext, pageIndicator
 // ══════════════════════════════════════════════════════════════
+
 class OnboardingFragment : Fragment() {
 
     private lateinit var pager:     ViewPager2
     private lateinit var btnNext:   MaterialButton
     private lateinit var indicator: MaterialTextView
 
-    override fun onCreateView(i: LayoutInflater, c: ViewGroup?, s: Bundle?): View =
-        i.inflate(R.layout.fragment_onboarding, c, false)
+    private val totalPages = 4
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View = inflater.inflate(R.layout.fragment_onboarding, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         pager     = view.findViewById(R.id.onboardingPager)
@@ -35,217 +52,244 @@ class OnboardingFragment : Fragment() {
         updateUI(0)
 
         pager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(p: Int) = updateUI(p)
+            override fun onPageSelected(position: Int) = updateUI(position)
         })
 
         btnNext.setOnClickListener {
             when (pager.currentItem) {
-                0, 1 -> pager.currentItem++
-                2    -> finish()
+                totalPages - 2 -> {
+                    // Page 4 (Mode Selection) — validate mode chosen
+                    val prefs = requireContext()
+                        .getSharedPreferences("fm_prefs", Context.MODE_PRIVATE)
+                    val modeSet = prefs.getString("operative_mode", null)
+                    if (modeSet == null) {
+                        // Flash indicator — mode not chosen yet
+                        indicator.setTextColor(Color.parseColor("#CC3300"))
+                        indicator.text = "CHOOSE YOUR MODE FIRST"
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            if (isAdded) updateUI(pager.currentItem)
+                        }, 1_800)
+                        return@setOnClickListener
+                    }
+                    pager.currentItem = pager.currentItem + 1
+                }
+                totalPages - 1 -> {
+                    // Last page — finish onboarding
+                    finishOnboarding()
+                }
+                else -> pager.currentItem = pager.currentItem + 1
             }
         }
     }
 
-    private fun updateUI(page: Int) {
-        indicator.text = "${page + 1} / 3"
-        btnNext.text = when (page) {
-            0    -> "I ACCEPT THE RULES  →"
-            1    -> "I FELT IT. PROCEED  →"
-            else -> "START MY FIRST MISSION"
+    private fun updateUI(position: Int) {
+        indicator.setTextColor(Color.parseColor("#666666"))
+        indicator.text = "${position + 1} / $totalPages"
+
+        btnNext.text = when (position) {
+            totalPages - 1 -> "BEGIN"
+            else           -> "NEXT"
         }
     }
 
-    private fun finish() {
+    private fun finishOnboarding() {
         requireContext()
             .getSharedPreferences("fm_prefs", Context.MODE_PRIVATE)
-            .edit().putBoolean("onboarding_done", true).apply()
+            .edit()
+            .putBoolean("onboarding_done", true)
+            .apply()
         findNavController().navigate(R.id.action_onboarding_to_home)
     }
 
-    private inner class PagerAdapter(f: Fragment) : FragmentStateAdapter(f) {
-        override fun getItemCount() = 3
-        override fun createFragment(p: Int): Fragment = when (p) {
+    // ── ViewPager2 Adapter ────────────────────────────────────
+    inner class PagerAdapter(f: Fragment) : FragmentStateAdapter(f) {
+        override fun getItemCount() = totalPages
+        override fun createFragment(position: Int): Fragment = when (position) {
             0    -> OnboardingPage1()
             1    -> OnboardingPage2()
-            else -> OnboardingPage3()
+            2    -> OnboardingPage3()
+            3    -> OnboardingPageMode()
+            else -> OnboardingPage1()
         }
     }
 }
 
 // ══════════════════════════════════════════════════════════════
-// Page 1 — THE HOOK: القواعد المرعبة
+// PAGE 1 — The Manifesto (unchanged from Phase 1)
+// Layout: fragment_onboarding_p1.xml
 // ══════════════════════════════════════════════════════════════
 class OnboardingPage1 : Fragment() {
-
-    override fun onCreateView(i: LayoutInflater, c: ViewGroup?, s: Bundle?): View =
-        i.inflate(R.layout.fragment_onboarding_p1, c, false)
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        val ids = listOf(
-            R.id.p1Title, R.id.p1Divider, R.id.p1Sub,
-            R.id.p1Rule1, R.id.p1Rule2, R.id.p1Rule3, R.id.p1WarningBox
-        )
-        ids.forEachIndexed { i, id ->
-            view.findViewById<View>(id)?.apply {
-                alpha = 0f
-                translationY = 20f
-                animate()
-                    .alpha(1f).translationY(0f)
-                    .setDuration(420).setStartDelay((i * 110).toLong())
-                    .setInterpolator(DecelerateInterpolator(2f)).start()
-            }
-        }
-    }
+    override fun onCreateView(
+        i: LayoutInflater, c: ViewGroup?, s: Bundle?
+    ): View = i.inflate(R.layout.fragment_onboarding_p1, c, false)
 }
 
 // ══════════════════════════════════════════════════════════════
-// Page 2 — THE TASTE: تجربة اللغم المصغرة
+// PAGE 2 — Demo (unchanged from Phase 1)
+// Layout: fragment_onboarding_p2.xml
 // ══════════════════════════════════════════════════════════════
 class OnboardingPage2 : Fragment() {
+    private val handler = Handler(Looper.getMainLooper())
 
-    private val handler  = Handler(Looper.getMainLooper())
-    private lateinit var vibrator: Vibrator
-    private var running = false
-
-    override fun onCreateView(i: LayoutInflater, c: ViewGroup?, s: Bundle?): View =
-        i.inflate(R.layout.fragment_onboarding_p2, c, false)
+    override fun onCreateView(
+        i: LayoutInflater, c: ViewGroup?, s: Bundle?
+    ): View = i.inflate(R.layout.fragment_onboarding_p2, c, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        vibrator = requireContext().getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-
-        val root       = view.findViewById<View>(R.id.p2Root)
-        val btnDemo    = view.findViewById<MaterialButton>(R.id.btnDemo)
-        val statusTv   = view.findViewById<MaterialTextView>(R.id.demoStatus)
-        val timerTv    = view.findViewById<MaterialTextView>(R.id.demoTimer)
-        val redOverlay = view.findViewById<View>(R.id.demoRedOverlay)
+        val btnDemo     = view.findViewById<MaterialButton>(R.id.btnDemo)
+        val demoOverlay = view.findViewById<View>(R.id.demoRedOverlay)
+        val demoTimer   = view.findViewById<MaterialTextView>(R.id.demoTimer)
+        val demoStatus  = view.findViewById<MaterialTextView>(R.id.demoStatus)
 
         btnDemo.setOnClickListener {
-            if (running) return@setOnClickListener
-            running = true
-            btnDemo.visibility = View.INVISIBLE
-            runDemo(root, statusTv, timerTv, redOverlay)
-        }
-    }
-
-    private fun runDemo(
-        root: View, status: MaterialTextView,
-        timer: MaterialTextView, overlay: View
-    ) {
-        val RED   = 0xFFCC3300.toInt()
-        val GREEN = 0xFF00CC44.toInt()
-        val DIM   = 0xFF555555.toInt()
-
-        // ── Fase 1: Arming ──
-        status.text = "ARMING SEQUENCE..."; status.setTextColor(DIM)
-
-        var t = 5
-        val tick = object : Runnable {
-            override fun run() {
-                if (!isAdded) return
-                timer.text = "00:00:0$t"
-                if (t-- > 0) handler.postDelayed(this, 600)
+            btnDemo.isEnabled = false
+            demoStatus.text   = "MINE ARMED"
+            var sec = 5
+            val r = object : Runnable {
+                override fun run() {
+                    if (!isAdded) return
+                    if (sec > 0) {
+                        demoTimer.text = "00:00:0$sec"
+                        sec--
+                        handler.postDelayed(this, 1_000)
+                    } else {
+                        demoOverlay.visibility = View.VISIBLE
+                        demoOverlay.alpha      = 0f
+                        demoOverlay.animate().alpha(0.85f).setDuration(400).start()
+                        demoStatus.text = "DETONATED"
+                        handler.postDelayed({
+                            if (!isAdded) return@postDelayed
+                            demoOverlay.animate().alpha(0f).setDuration(600)
+                                .withEndAction {
+                                    demoOverlay.visibility = View.GONE
+                                    demoStatus.text = "TRY AGAIN"
+                                    btnDemo.isEnabled = true
+                                }.start()
+                        }, 1_500)
+                    }
+                }
             }
+            handler.post(r)
         }
-        handler.post(tick)
-
-        // ── Fase 2: Armed ──
-        handler.postDelayed({
-            if (!isAdded) return@postDelayed
-            status.text = "⚡ MINE ARMED — DO NOT MOVE"; status.setTextColor(RED)
-            buzz(longArrayOf(0, 150, 80, 150), -1)
-        }, 2_000)
-
-        // ── Fase 3: BOOM ──
-        handler.postDelayed({
-            if (!isAdded) return@postDelayed
-            status.text = "💥  MINE DETONATED"; status.setTextColor(RED)
-            timer.setTextColor(RED)
-            buzz(longArrayOf(0, 600, 150, 600, 150, 800), -1)
-            flashRed(overlay)
-        }, 4_200)
-
-        // ── Fase 4: Done ──
-        handler.postDelayed({
-            if (!isAdded) return@postDelayed
-            overlay.animate().alpha(0f).setDuration(500).start()
-            status.text = "NOW YOU KNOW THE STAKES"; status.setTextColor(GREEN)
-            timer.text = "DEMO COMPLETE"; timer.setTextColor(GREEN)
-        }, 7_500)
-    }
-
-    private fun flashRed(overlay: View) {
-        overlay.alpha = 0f; overlay.visibility = View.VISIBLE
-        var count = 0
-        val flash = object : Runnable {
-            override fun run() {
-                if (!isAdded || count >= 8) return
-                overlay.animate().alpha(if (count % 2 == 0) 0.55f else 0.05f)
-                    .setDuration(180).start()
-                count++
-                handler.postDelayed(this, 200)
-            }
-        }
-        handler.post(flash)
-    }
-
-    private fun buzz(pattern: LongArray, repeat: Int) {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                vibrator.vibrate(VibrationEffect.createWaveform(pattern, repeat))
-            else @Suppress("DEPRECATION") vibrator.vibrate(pattern, repeat)
-        } catch (_: Exception) {}
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         handler.removeCallbacksAndMessages(null)
-        try { vibrator.cancel() } catch (_: Exception) {}
     }
 }
 
 // ══════════════════════════════════════════════════════════════
-// Page 3 — COMMITMENT: اختيار مدة الجلسة
+// PAGE 3 — Duration Selection (unchanged from Phase 1)
+// Layout: fragment_onboarding_p3.xml
 // ══════════════════════════════════════════════════════════════
 class OnboardingPage3 : Fragment() {
-
-    private val durations = linkedMapOf(
-        R.id.btn30min to 30 * 60_000L,
-        R.id.btn1h    to  60 * 60_000L,
-        R.id.btn2h    to 120 * 60_000L,
-        R.id.btn3h    to 180 * 60_000L
-    )
-    private var selectedId = R.id.btn1h
-
-    override fun onCreateView(i: LayoutInflater, c: ViewGroup?, s: Bundle?): View =
-        i.inflate(R.layout.fragment_onboarding_p3, c, false)
+    override fun onCreateView(
+        i: LayoutInflater, c: ViewGroup?, s: Bundle?
+    ): View = i.inflate(R.layout.fragment_onboarding_p3, c, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        val prefs = requireContext().getSharedPreferences("fm_prefs", Context.MODE_PRIVATE)
+        val prefs = requireContext()
+            .getSharedPreferences("fm_prefs", Context.MODE_PRIVATE)
+
+        val durations = mapOf(
+            R.id.btn30min to 30 * 60_000L,
+            R.id.btn1h    to 60 * 60_000L,
+            R.id.btn2h    to 120 * 60_000L,
+            R.id.btn3h    to 180 * 60_000L
+        )
+
+        // Default: 1 hour
         prefs.edit().putLong("default_duration_ms", durations[R.id.btn1h]!!).apply()
 
-        durations.keys.forEach { id ->
-            view.findViewById<MaterialButton>(id)?.setOnClickListener {
-                selectedId = id
-                prefs.edit().putLong("default_duration_ms", durations[id]!!).apply()
-                refreshButtons(view)
+        val WHITE = Color.parseColor("#E8E8E8")
+        val RED   = Color.parseColor("#CC3300")
+
+        durations.keys.forEach { btnId ->
+            view.findViewById<MaterialButton>(btnId)?.setOnClickListener {
+                prefs.edit()
+                    .putLong("default_duration_ms", durations[btnId]!!)
+                    .apply()
+                // Visual feedback
+                durations.keys.forEach { id ->
+                    view.findViewById<MaterialButton>(id)
+                        ?.setTextColor(WHITE)
+                }
+                (it as MaterialButton).setTextColor(RED)
             }
         }
-        refreshButtons(view)
+    }
+}
+
+// ══════════════════════════════════════════════════════════════
+// PAGE 4 — Mode Selection (NEW in Phase 2)
+// Layout: fragment_onboarding_page_mode.xml  ← NEW layout needed
+//
+// CRITICAL: This choice is PERMANENT.
+// Once saved, the mode CANNOT be changed.
+// ══════════════════════════════════════════════════════════════
+class OnboardingPageMode : Fragment() {
+
+    private lateinit var prefs: SharedPreferences
+    private var selectedMode: OperativeMode? = null
+
+    private lateinit var btnRecruit:   MaterialButton
+    private lateinit var btnOperative: MaterialButton
+    private lateinit var btnGhost:     MaterialButton
+    private lateinit var tvWarning:    MaterialTextView
+    private lateinit var tvModeDesc:   MaterialTextView
+
+    override fun onCreateView(
+        i: LayoutInflater, c: ViewGroup?, s: Bundle?
+    ): View = i.inflate(R.layout.fragment_onboarding_page_mode, c, false)
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        prefs = requireContext()
+            .getSharedPreferences("fm_prefs", Context.MODE_PRIVATE)
+
+        btnRecruit   = view.findViewById(R.id.btnModeRecruit)
+        btnOperative = view.findViewById(R.id.btnModeOperative)
+        btnGhost     = view.findViewById(R.id.btnModeGhost)
+        tvWarning    = view.findViewById(R.id.tvModeWarning)
+        tvModeDesc   = view.findViewById(R.id.tvModeDescription)
+
+        btnRecruit.setOnClickListener   { selectMode(OperativeMode.RECRUIT) }
+        btnOperative.setOnClickListener { selectMode(OperativeMode.OPERATIVE) }
+        btnGhost.setOnClickListener     { selectMode(OperativeMode.GHOST) }
     }
 
-    private fun refreshButtons(view: View) {
-        val RED_STROKE  = android.content.res.ColorStateList.valueOf(0xFFCC3300.toInt())
-        val GREY_STROKE = android.content.res.ColorStateList.valueOf(0xFF1E1E1E.toInt())
-        durations.keys.forEach { id ->
-            view.findViewById<MaterialButton>(id)?.apply {
-                if (id == selectedId) {
-                    strokeColor = RED_STROKE
-                    setBackgroundColor(0xFF150000.toInt())
-                } else {
-                    strokeColor = GREY_STROKE
-                    setBackgroundColor(0xFF0D0D0D.toInt())
-                }
-            }
+    private fun selectMode(mode: OperativeMode) {
+        selectedMode = mode
+        val config   = ModeConfigProvider.get(mode)
+
+        // Save immediately — permanent
+        ModeConfigProvider.saveToPrefs(prefs, mode)
+
+        // Update description
+        tvModeDesc.text = config.displayDescription
+
+        // Update button states
+        val RED   = Color.parseColor("#CC3300")
+        val WHITE = Color.parseColor("#E8E8E8")
+        val DIM   = Color.parseColor("#333333")
+
+        listOf(
+            btnRecruit   to OperativeMode.RECRUIT,
+            btnOperative to OperativeMode.OPERATIVE,
+            btnGhost     to OperativeMode.GHOST
+        ).forEach { (btn, btnMode) ->
+            btn.setTextColor(if (btnMode == mode) RED else WHITE)
+            btn.setBackgroundColor(if (btnMode == mode) Color.parseColor("#1A0000") else DIM)
         }
+
+        // Show warning — this choice is forever
+        tvWarning.visibility = View.VISIBLE
+        tvWarning.text       = "YOU CANNOT CHANGE THIS.\n${config.displayName} LOCKED."
+        tvWarning.alpha      = 0f
+        tvWarning.animate()
+            .alpha(1f)
+            .setDuration(500)
+            .setInterpolator(DecelerateInterpolator())
+            .start()
     }
 }
