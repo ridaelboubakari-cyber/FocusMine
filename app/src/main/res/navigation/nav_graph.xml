@@ -14,6 +14,7 @@
     </fragment>
     
     <fragment android:id="@+id/preContractFragment" android:name="com.reda.focusmine.ui.PreContractFragment" android:label="PreContract">
+        <argument android:name="durationMs" app:argType="long" android:defaultValue="3600000L"/>
         <action android:id="@+id/action_preContract_to_mission" app:destination="@id/missionFragment" app:enterAnim="@anim/fade_in" app:exitAnim="@anim/fade_out" app:popUpTo="@id/preContractFragment" app:popUpToInclusive="true"/>
     </fragment>
     
