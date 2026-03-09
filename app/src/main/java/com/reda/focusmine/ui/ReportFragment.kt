@@ -1,5 +1,6 @@
 package com.reda.focusmine.ui
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
