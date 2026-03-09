@@ -1,133 +1,44 @@
-<?xml version="1.0" encoding="utf-8"?>
-<navigation
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/nav_graph"
-    app:startDestination="@id/splashFragment">
+<!-- 
+    nav_graph.xml — PHASE 3
+    REPLACE the existing nav_graph.xml entirely with this file.
 
-    <fragment
-        android:id="@+id/splashFragment"
-        android:name="com.reda.focusmine.ui.SplashFragment"
-        android:label="Splash"
-        tools:layout="@layout/fragment_splash">
-
-        <action
-            android:id="@+id/action_splash_to_onboarding"
-            app:destination="@id/onboardingFragment"
-            app:enterAnim="@anim/fade_in"
-            app:exitAnim="@anim/fade_out"
-            app:popUpTo="@id/splashFragment"
-            app:popUpToInclusive="true" />
-
-        <action
-            android:id="@+id/action_splash_to_home"
-            app:destination="@id/homeFragment"
-            app:enterAnim="@anim/fade_in"
-            app:exitAnim="@anim/fade_out"
-            app:popUpTo="@id/splashFragment"
-            app:popUpToInclusive="true" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/onboardingFragment"
-        android:name="com.reda.focusmine.ui.OnboardingFragment"
-        android:label="Onboarding"
-        tools:layout="@layout/fragment_onboarding">
-
-        <action
-            android:id="@+id/action_onboarding_to_home"
-            app:destination="@id/homeFragment"
-            app:enterAnim="@anim/slide_in_right"
-            app:exitAnim="@anim/slide_out_left"
-            app:popUpTo="@id/onboardingFragment"
-            app:popUpToInclusive="true" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/homeFragment"
-        android:name="com.reda.focusmine.ui.HomeFragment"
-        android:label="Home"
-        tools:layout="@layout/fragment_home">
-
-        <action
-            android:id="@+id/action_home_to_mission"
-            app:destination="@id/missionFragment"
-            app:enterAnim="@anim/scale_in"
-            app:exitAnim="@anim/fade_out" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/missionFragment"
-        android:name="com.reda.focusmine.ui.MissionFragment"
-        android:label="Mission"
-        tools:layout="@layout/fragment_mission">
-
-        <argument
-            android:name="durationMs"
-            app:argType="long"
-            android:defaultValue="7200000L" />
-            
-        <argument 
-            android:name="microGoal"
-            app:argType="string"
-            android:defaultValue="" />
-
-        <argument 
-            android:name="emotionalSnapshot"
-            app:argType="string"
-            android:defaultValue="" />
-
-        <action
-            android:id="@+id/action_mission_to_report"
-            app:destination="@id/reportFragment"
-            app:enterAnim="@anim/fade_in"
-            app:exitAnim="@anim/fade_out"
-            app:popUpTo="@id/missionFragment"
-            app:popUpToInclusive="true" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/reportFragment"
-        android:name="com.reda.focusmine.ui.ReportFragment"
-        android:label="Report"
-        tools:layout="@layout/fragment_report">
-
-        <argument
-            android:name="isSuccess"
-            app:argType="boolean" />
-
-        <argument
-            android:name="durationMs"
-            app:argType="long" />
-            
-        <argument android:name="exitExcuse"
-            app:argType="string"
-            android:defaultValue="" />
-
-        <argument android:name="wasCompromised"
-            app:argType="boolean"
-            android:defaultValue="false" />
-
-        <argument android:name="appLeftCount"
-            app:argType="integer"
-            android:defaultValue="0" />
-
-        <argument android:name="emotionalSnapshot"
-            app:argType="string"
-            android:defaultValue="" />
-
-        <argument android:name="microGoal"
-            app:argType="string"
-            android:defaultValue="" />
-
-        <action
-            android:id="@+id/action_report_to_home"
-            app:destination="@id/homeFragment"
-            app:enterAnim="@anim/slide_in_right"
-            app:exitAnim="@anim/slide_out_left"
-            app:popUpTo="@id/reportFragment"
-            app:popUpToInclusive="true" />
-    </fragment>
-
+    CHANGES from Phase 2:
+      + preContractFragment added between Home and Mission
+      + action_home_to_mission RENAMED to action_home_to_preContract
+      + missionFragment gets new args: microGoal, emotionalSnapshot
+      + reportFragment gets new args: exitExcuse, wasCompromised,
+                                      appLeftCount, microGoal,
+                                      emotionalSnapshot
+ -->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/nav_graph" app:startDestination="@id/splashFragment">
+<fragment android:id="@+id/splashFragment" android:name="com.reda.focusmine.ui.SplashFragment" android:label="Splash">
+<action android:id="@+id/action_splash_to_onboarding" app:destination="@id/onboardingFragment" app:enterAnim="@anim/fade_in" app:exitAnim="@anim/fade_out" app:popUpTo="@id/splashFragment" app:popUpToInclusive="true"/>
+<action android:id="@+id/action_splash_to_home" app:destination="@id/homeFragment" app:enterAnim="@anim/fade_in" app:exitAnim="@anim/fade_out" app:popUpTo="@id/splashFragment" app:popUpToInclusive="true"/>
+</fragment>
+<fragment android:id="@+id/onboardingFragment" android:name="com.reda.focusmine.ui.OnboardingFragment" android:label="Onboarding">
+<action android:id="@+id/action_onboarding_to_home" app:destination="@id/homeFragment" app:enterAnim="@anim/fade_in" app:exitAnim="@anim/fade_out" app:popUpTo="@id/onboardingFragment" app:popUpToInclusive="true"/>
+</fragment>
+<fragment android:id="@+id/homeFragment" android:name="com.reda.focusmine.ui.HomeFragment" android:label="Home">
+<action android:id="@+id/action_home_to_preContract" app:destination="@id/preContractFragment" app:enterAnim="@anim/slide_in_right" app:exitAnim="@anim/fade_out"/>
+</fragment>
+<!--  NEW Phase 3  -->
+<fragment android:id="@+id/preContractFragment" android:name="com.reda.focusmine.ui.PreContractFragment" android:label="PreContract">
+<action android:id="@+id/action_preContract_to_mission" app:destination="@id/missionFragment" app:enterAnim="@anim/fade_in" app:exitAnim="@anim/fade_out" app:popUpTo="@id/preContractFragment" app:popUpToInclusive="true"/>
+</fragment>
+<fragment android:id="@+id/missionFragment" android:name="com.reda.focusmine.ui.MissionFragment" android:label="Mission">
+<argument android:name="durationMs" app:argType="long" android:defaultValue="3600000"/>
+<argument android:name="microGoal" app:argType="string" android:defaultValue=""/>
+<argument android:name="emotionalSnapshot" app:argType="string" android:defaultValue=""/>
+<action android:id="@+id/action_mission_to_report" app:destination="@id/reportFragment" app:enterAnim="@anim/fade_in" app:exitAnim="@anim/fade_out" app:popUpTo="@id/missionFragment" app:popUpToInclusive="true"/>
+</fragment>
+<fragment android:id="@+id/reportFragment" android:name="com.reda.focusmine.ui.ReportFragment" android:label="Report">
+<argument android:name="isSuccess" app:argType="boolean" android:defaultValue="false"/>
+<argument android:name="durationMs" app:argType="long" android:defaultValue="0"/>
+<argument android:name="microGoal" app:argType="string" android:defaultValue=""/>
+<argument android:name="exitExcuse" app:argType="string" android:defaultValue=""/>
+<argument android:name="wasCompromised" app:argType="boolean" android:defaultValue="false"/>
+<argument android:name="appLeftCount" app:argType="integer" android:defaultValue="0"/>
+<argument android:name="emotionalSnapshot" app:argType="string" android:defaultValue=""/>
+<action android:id="@+id/action_report_to_home" app:destination="@id/homeFragment" app:enterAnim="@anim/slide_in_right" app:exitAnim="@anim/slide_out_left" app:popUpTo="@id/reportFragment" app:popUpToInclusive="true"/>
+</fragment>
 </navigation>
