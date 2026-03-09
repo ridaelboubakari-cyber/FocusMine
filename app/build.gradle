@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId "com.reda.focusmine"
-        minSdk 26  // Claude طلعها لـ 26 باش يخدمو الأنيماشيونات الجداد مزيان
+        minSdk 26
         targetSdk 34
         versionCode 1
         versionName "1.0"
@@ -51,6 +51,8 @@ dependencies {
     def lifecycle_version = "2.7.0"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
+    // هاد السطر هو اللي غيحل مشكل العساس (ProcessLifecycleOwner)
+    implementation "androidx.lifecycle:lifecycle-process:$lifecycle_version" 
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3"
 
     // ─── ViewPager2 (Onboarding) ───
