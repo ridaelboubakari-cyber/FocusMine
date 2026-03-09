@@ -20,12 +20,12 @@ class HomeFragment : Fragment() {
     private val vm: HomeViewModel by viewModels()
 
     // Views
-    private lateinit var tvStreak:       MaterialTextView
+    private lateinit var tvStreak:        MaterialTextView
     private lateinit var tvTotalHours:   MaterialTextView
     private lateinit var tvFailCount:    MaterialTextView
-    private lateinit var tvGreeting:     MaterialTextView
+    private lateinit var tvGreeting:      MaterialTextView
     private lateinit var tvMissionCount: MaterialTextView
-    private lateinit var btnStart:       MaterialButton
+    private lateinit var btnStart:        MaterialButton
 
     override fun onCreateView(i: LayoutInflater, c: ViewGroup?, s: Bundle?): View =
         i.inflate(R.layout.fragment_home, c, false)
@@ -73,7 +73,12 @@ class HomeFragment : Fragment() {
                 .getSharedPreferences("fm_prefs", Context.MODE_PRIVATE)
             val duration = prefs.getLong("default_duration_ms", 60 * 60_000L)
 
-            val action = HomeFragmentDirections.actionHomeToMission(duration)
+            // التعديل ديال PHASE 2: زدنا الخانات الجداد باش ما يوقعش Crash
+            val action = HomeFragmentDirections.actionHomeToMission(
+                durationMs = duration,
+                microGoal = "",
+                emotionalSnapshot = ""
+            )
             findNavController().navigate(action)
         }
     }
