@@ -69,16 +69,8 @@ class HomeFragment : Fragment() {
 
     private fun setupButton() {
         btnStart.setOnClickListener {
-            val prefs = requireContext()
-                .getSharedPreferences("fm_prefs", Context.MODE_PRIVATE)
-            val duration = prefs.getLong("default_duration_ms", 60 * 60_000L)
-
-            // التعديل ديال PHASE 2: زدنا الخانات الجداد باش ما يوقعش Crash
-            val action = HomeFragmentDirections.actionHomeToMission(
-                durationMs = duration,
-                microGoal = "",
-                emotionalSnapshot = ""
-            )
+            // التعديل ديال PHASE 3: دابا البوطونة كتديك لـ شاشة "العقد" باش تكتب الهدف
+            val action = HomeFragmentDirections.actionHomeToPreContract()
             findNavController().navigate(action)
         }
     }
