@@ -1,0 +1,10 @@
+<!-- 
+    bg_excuse_input.xml
+    Place in: app/src/main/res/drawable/
+
+    Border for the excuse EditText inside the Iron Door overlay.
+ -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+<solid android:color="#0D0D0D"/>
+<stroke android:width="1dp" android:color="#333333"/>
+</shape>
