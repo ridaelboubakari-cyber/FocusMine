@@ -1,96 +1,12 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout 
-    xmlns:android="http://schemas.android.com/apk/res/android" 
-    xmlns:app="http://schemas.android.com/apk/res-auto" 
-    android:id="@+id/p2Root" 
-    android:layout_width="match_parent" 
-    android:layout_height="match_parent" 
-    android:background="#080808">
-
-    <View 
-        android:id="@+id/demoRedOverlay" 
-        android:layout_width="0dp" 
-        android:layout_height="0dp" 
-        android:background="#CC3300" 
-        android:alpha="0" 
-        android:visibility="gone" 
-        app:layout_constraintTop_toTopOf="parent" 
-        app:layout_constraintBottom_toBottomOf="parent" 
-        app:layout_constraintStart_toStartOf="parent" 
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-    <com.google.android.material.textview.MaterialTextView 
-        android:layout_width="wrap_content" 
-        android:layout_height="wrap_content" 
-        android:layout_marginTop="28dp" 
-        android:text="FEEL THE STAKES" 
-        android:textColor="#CC3300" 
-        android:textSize="28sp" 
-        android:fontFamily="@font/rajdhani_bold" 
-        android:letterSpacing="0.1" 
-        app:layout_constraintTop_toTopOf="parent" 
-        app:layout_constraintStart_toStartOf="parent" 
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-    <com.google.android.material.textview.MaterialTextView 
-        android:layout_width="wrap_content" 
-        android:layout_height="wrap_content" 
-        android:layout_marginTop="8dp" 
-        android:text="A 5-second mock mine. Feel what failure is like." 
-        android:textColor="#333333" 
-        android:textSize="13sp" 
-        android:fontFamily="@font/rajdhani_medium" 
-        app:layout_constraintTop_toTopOf="parent" 
-        app:layout_constraintStart_toStartOf="parent" 
-        app:layout_constraintEnd_toEndOf="parent" 
-        app:layout_constraintVertical_bias="0.12"/>
-
-    <com.google.android.material.textview.MaterialTextView 
-        android:id="@+id/demoTimer" 
-        android:layout_width="wrap_content" 
-        android:layout_height="wrap_content" 
-        android:text="00:00:05" 
-        android:textColor="#1A1A1A" 
-        android:textSize="64sp" 
-        android:fontFamily="@font/rajdhani_bold" 
-        android:letterSpacing="-0.02" 
-        app:layout_constraintTop_toTopOf="parent" 
-        app:layout_constraintBottom_toBottomOf="parent" 
-        app:layout_constraintStart_toStartOf="parent" 
-        app:layout_constraintEnd_toEndOf="parent" 
-        app:layout_constraintVertical_bias="0.38"/>
-
-    <com.google.android.material.textview.MaterialTextView 
-        android:id="@+id/demoStatus" 
-        android:layout_width="wrap_content" 
-        android:layout_height="wrap_content" 
-        android:layout_marginTop="12dp" 
-        android:text="PRESS TO ARM THE DEMO MINE" 
-        android:textColor="#333333" 
-        android:textSize="12sp" 
-        android:fontFamily="@font/rajdhani_medium" 
-        android:letterSpacing="0.2" 
-        app:layout_constraintTop_toBottomOf="@id/demoTimer" 
-        app:layout_constraintStart_toStartOf="parent" 
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-    <com.google.android.material.button.MaterialButton 
-        android:id="@+id/btnStartDemo" 
-        style="@style/Widget.Material3.Button.OutlinedButton" 
-        android:layout_width="wrap_content" 
-        android:layout_height="48dp" 
-        android:layout_marginBottom="60dp" 
-        android:text="▶ ARM DEMO MINE" 
-        android:textColor="#CC3300" 
-        android:textSize="13sp" 
-        android:fontFamily="@font/rajdhani_bold" 
-        android:letterSpacing="0.15" 
-        app:strokeColor="#CC3300" 
-        app:strokeWidth="1dp" 
-        app:cornerRadius="0dp" 
-        app:rippleColor="#1ACC3300" 
-        app:layout_constraintBottom_toBottomOf="parent" 
-        app:layout_constraintStart_toStartOf="parent" 
-        app:layout_constraintEnd_toEndOf="parent"/>
-
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/p2Root" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#080808">
+<!--  demoRedOverlay — hidden by default, shown on explosion  -->
+<View android:id="@+id/demoRedOverlay" android:layout_width="0dp" android:layout_height="0dp" android:background="#CC3300" android:alpha="0" android:visibility="gone" app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent"/>
+<com.google.android.material.textview.MaterialTextView android:id="@+id/p2PageTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="28dp" android:text="FEEL THE STAKES" android:textColor="#CC3300" android:textSize="28sp" android:fontFamily="@font/rajdhani_bold" android:letterSpacing="0.1" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent"/>
+<com.google.android.material.textview.MaterialTextView android:id="@+id/p2PageSub" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="A 5-second mock mine. Feel what failure costs." android:textColor="#333333" android:textSize="13sp" android:fontFamily="@font/rajdhani_medium" app:layout_constraintTop_toBottomOf="@id/p2PageTitle" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent"/>
+<!--  demoTimer  -->
+<com.google.android.material.textview.MaterialTextView android:id="@+id/demoTimer" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="00:00:05" android:textColor="#1A1A1A" android:textSize="64sp" android:fontFamily="@font/rajdhani_bold" android:letterSpacing="-0.02" app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintVertical_bias="0.38"/>
+<!--  demoStatus  -->
+<com.google.android.material.textview.MaterialTextView android:id="@+id/demoStatus" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="PRESS TO ARM THE DEMO MINE" android:textColor="#333333" android:textSize="12sp" android:fontFamily="@font/rajdhani_medium" android:letterSpacing="0.2" app:layout_constraintTop_toBottomOf="@id/demoTimer" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent"/>
+<!--  btnDemo  -->
+<com.google.android.material.button.MaterialButton android:id="@+id/btnDemo" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="wrap_content" android:layout_height="48dp" android:layout_marginBottom="60dp" android:text="▶ ARM DEMO MINE" android:textColor="#CC3300" android:textSize="13sp" android:fontFamily="@font/rajdhani_bold" android:letterSpacing="0.15" app:strokeColor="#CC3300" app:strokeWidth="1dp" app:cornerRadius="0dp" app:rippleColor="#1ACC3300" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent"/>
 </androidx.constraintlayout.widget.ConstraintLayout>
