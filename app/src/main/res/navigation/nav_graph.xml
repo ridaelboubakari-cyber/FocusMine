@@ -78,7 +78,7 @@
         <argument
             android:name="durationMs"
             app:argType="long"
-            android:defaultValue="7200000" />
+            android:defaultValue="7200000L" />
 
         <action
             android:id="@+id/action_mission_to_report"
