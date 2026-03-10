@@ -56,28 +56,28 @@ class OnboardingFragment : Fragment() {
         })
 
         btnNext.setOnClickListener {
-            when (pager.currentItem) {
-                totalPages - 2 -> {
-                    // Page 4 (Mode Selection) — validate mode chosen
-                    val prefs = requireContext()
-                        .getSharedPreferences("fm_prefs", Context.MODE_PRIVATE)
-                    val modeSet = prefs.getString("operative_mode", null)
-                    if (modeSet == null) {
-                        // Flash indicator — mode not chosen yet
-                        indicator.setTextColor(Color.parseColor("#CC3300"))
-                        indicator.text = "CHOOSE YOUR MODE FIRST"
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            if (isAdded) updateUI(pager.currentItem)
-                        }, 1_800)
-                        return@setOnClickListener
-                    }
-                    pager.currentItem = pager.currentItem + 1
+            // التعديل الجديد: كنقلبو واش حنا فـ الصفحة اللخرة كاع
+            if (pager.currentItem == totalPages - 1) {
+                // Page 4 (Mode Selection) — validate mode chosen
+                val prefs = requireContext()
+                    .getSharedPreferences("fm_prefs", Context.MODE_PRIVATE)
+                val modeSet = prefs.getString("operative_mode", null)
+                
+                if (modeSet == null) {
+                    // Flash indicator — mode not chosen yet
+                    indicator.setTextColor(Color.parseColor("#CC3300"))
+                    indicator.text = "CHOOSE YOUR MODE FIRST"
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        if (isAdded) updateUI(pager.currentItem)
+                    }, 1_800)
+                    return@setOnClickListener
                 }
-                totalPages - 1 -> {
-                    // Last page — finish onboarding
-                    finishOnboarding()
-                }
-                else -> pager.currentItem = pager.currentItem + 1
+                
+                // Last page AND mode is selected — finish onboarding
+                finishOnboarding()
+            } else {
+                // أي صفحة أخرى، غير زيد للقدام
+                pager.currentItem = pager.currentItem + 1
             }
         }
     }
